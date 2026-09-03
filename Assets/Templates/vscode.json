@@ -1,0 +1,26 @@
+{
+  "$schema": "vscode://schemas/color-theme",
+  "name": "bw77-shell",
+  "type": "dark",
+  "colors": {
+    "editor.background": "{{bgBase}}",
+    "editor.foreground": "{{text}}",
+    "editorCursor.foreground": "{{accent}}",
+    "editor.selectionBackground": "{{bgActive}}",
+    "editor.lineHighlightBackground": "{{bgRaised}}",
+    "sideBar.background": "{{bgDeep}}",
+    "sideBar.foreground": "{{textDim}}",
+    "activityBar.background": "{{bgDeep}}",
+    "activityBar.foreground": "{{accent}}",
+    "statusBar.background": "{{bgOverlay}}",
+    "statusBar.foreground": "{{text}}",
+    "titleBar.activeBackground": "{{bgDeep}}",
+    "titleBar.activeForeground": "{{text}}",
+    "tab.activeBackground": "{{bgRaised}}",
+    "tab.activeForeground": "{{accent}}",
+    "tab.inactiveBackground": "{{bgDeep}}",
+    "focusBorder": "{{danger}}",
+    "terminal.background": "{{termBg}}",
+    "terminal.foreground": "{{termFg}}"
+  }
+}
