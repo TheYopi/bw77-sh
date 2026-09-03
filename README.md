@@ -1,5 +1,8 @@
 # BW77
 
+<img width="2560" height="1440" alt="image" src="https://github.com/user-attachments/assets/24ef5088-43d2-4ef9-b3f9-b9bc1df6eeb4" />
+
+
 A Cyberpunk 2077 inspired desktop shell for Wayland, built on
 [Quickshell](https://quickshell.org).
 
