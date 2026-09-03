@@ -1,8 +1,0 @@
-.qmlls.ini
-state/
-settings.json
-palettes/
-*.qmlc
-*.jsc
-.cache/
-.DS_Store
