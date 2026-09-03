@@ -345,3 +345,9 @@ opening an issue with.
 
 **A desktop widget is on the wrong display.** `qs -c bw77-shell ipc call desktop
 widgets` prints what is actually stored.
+
+---
+
+## Licence
+
+MIT.
