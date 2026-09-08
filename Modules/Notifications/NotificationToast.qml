@@ -21,7 +21,7 @@ Item {
     // A notification that asks to be shown for twenty seconds is asking for a
     // reason, and overriding it with one global number was never deliberate.
     readonly property int lifetime: {
-        const asked = root.notif.expireTimeout;
+        const asked = root.notif ? root.notif.expireTimeout : undefined;
         return (asked !== undefined && asked > 0)
             ? asked : Settings.notifications.timeout;
     }
@@ -104,9 +104,20 @@ Item {
         easing.type: Theme.curveFor("notifications")
     }
 
-    readonly property bool critical: notif.urgency === NotificationUrgency.Critical
+    /*
+     * Every read of `notif` is guarded, because the handle can be gone.
+     *
+     * It belongs to the notification server, and the sending application can
+     * withdraw it at any moment - the layer drops it from the list when that
+     * happens, but this delegate outlives the handle by the frame it takes for
+     * that to land, and an unguarded binding spends that frame throwing.
+     */
+    readonly property bool critical: root.notif
+        && root.notif.urgency === NotificationUrgency.Critical
     readonly property color accent: critical ? Theme.danger
-        : (notif.urgency === NotificationUrgency.Low ? Theme.textDim : Theme.accent)
+        : (root.notif && root.notif.urgency === NotificationUrgency.Low
+            ? Theme.textDim : Theme.accent)
+    readonly property string body: root.notif ? root.notif.body : ""
 
     /*
      * --- the action buttons
@@ -126,7 +137,7 @@ Item {
      * buttons alone entirely.
      */
     readonly property string actionSignature: {
-        const given = root.notif.actions || [];
+        const given = (root.notif && root.notif.actions) || [];
         let sig = "";
         for (let i = 0; i < given.length; i++)
             sig += String(given[i].text || "") + "\u001f";
@@ -137,7 +148,7 @@ Item {
 
     function rebuildActions() {
         const out = [];
-        const given = root.notif.actions || [];
+        const given = (root.notif && root.notif.actions) || [];
         for (let i = 0; i < given.length; i++) out.push(given[i]);
 
         /*
@@ -213,7 +224,7 @@ Item {
         Panel {
             anchors.fill: parent
             emphasis: root.critical ? "alert" : "normal"
-            serialSeed: String(root.notif.id)
+            serialSeed: root.notif ? String(root.notif.id) : ""
             // No serial. It is decoration for a surface you sit and read; on a
             // toast it printed between the action buttons and the countdown bar
             // and read as a fourth line of content in a three-line surface.
@@ -261,7 +272,7 @@ Item {
                             anchors.centerIn: parent
                             implicitSize: 24
                             visible: status === Image.Ready
-                            source: root.notif.appIcon
+                            source: root.notif && root.notif.appIcon
                                 ? Quickshell.iconPath(root.notif.appIcon, true) : ""
                         }
 
@@ -295,7 +306,8 @@ Item {
                         CyberText {
                             width: parent.width
                             horizontalAlignment: Text.AlignHCenter
-                            text: root.notif.appName || Settings.t("System")
+                            text: (root.notif && root.notif.appName)
+                                || Settings.t("System")
                             role: "label"
                             bold: true
                             // The one place the danger colour earns its keep on
@@ -310,7 +322,7 @@ Item {
                             width: parent.width
                             textWidth: parent.width
                             horizontalAlignment: Text.AlignHCenter
-                            text: root.notif.summary
+                            text: root.notif ? root.notif.summary : ""
                             role: "micro"
                             color: Theme.alpha(Theme.danger, 0.85)
                             decodeOnChange: Settings.notifications.animation === "glitch"
@@ -320,8 +332,8 @@ Item {
 
                 CyberText {
                     width: parent.width
-                    visible: root.notif.body !== ""
-                    text: root.notif.body
+                    visible: root.body !== ""
+                    text: root.body
                     role: "body"
                     caps: false
                     color: Theme.accent
