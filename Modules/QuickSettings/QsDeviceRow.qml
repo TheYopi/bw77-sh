@@ -31,6 +31,8 @@ Item {
         color: root.active
             ? Theme.alpha(root.tint, 0.18)
             : (mouse.containsMouse ? Theme.alpha(root.tint, 0.1) : "transparent")
+
+        Behavior on color { ColorAnimation { duration: Theme.durFast } }
     }
 
     CyberText {
@@ -42,6 +44,8 @@ Item {
         role: "icon"
         font.pixelSize: Theme.fontSmall
         color: root.active ? root.tint : Theme.textMuted
+
+        Behavior on color { ColorAnimation { duration: Theme.durFast } }
 
         // A slow spin while pairing, so the row reads as working rather than stuck.
         RotationAnimator on rotation {
@@ -105,6 +109,8 @@ Item {
             text: "\u2715"
             role: "micro"
             color: removeMouse.containsMouse ? Theme.danger : Theme.textMuted
+
+            Behavior on color { ColorAnimation { duration: Theme.durFast } }
 
             MouseArea {
                 id: removeMouse

@@ -25,6 +25,7 @@ Singleton {
     property bool quickSettingsOpen: false
     property bool lockOpen: false
     property bool wallpaperSelectorOpen: false
+    property bool emojiOpen: false
 
     // Set by the surface itself while it exists. Distinguishes "the holder
     // never built it" from "it is built and not drawing" - two failures that
@@ -124,6 +125,20 @@ Singleton {
     }
 
 
+    /*
+     * --- OSD requests from outside
+     *
+     * The compositor's key bindings run their own command - playerctl,
+     * brightnessctl - and then report here which key it was, because the
+     * result alone cannot say: MPRIS reports a new track the same way for
+     * Previous as for Next, and the backlight is only polled. OsdLayer listens.
+     */
+    signal osdRequested(string kind, string detail)
+
+    function osd(kind, detail) {
+        osdRequested(kind, detail || "");
+    }
+
     function closeAll() {
         launcherOpen = false;
         sessionOpen = false;
@@ -131,6 +146,13 @@ Singleton {
         themeMenuOpen = false;
         quickSettingsOpen = false;
         wallpaperSelectorOpen = false;
+        emojiOpen = false;
+    }
+
+    function toggleEmoji() {
+        const next = !emojiOpen;
+        closeAll();
+        emojiOpen = next;
     }
 
     function toggleLauncher() {

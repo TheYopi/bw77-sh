@@ -28,7 +28,6 @@ Item {
 
     // Resolved once, at construction, from the shared deadline.
     property int startRemaining: 0
-    property real startFraction: 1
     property bool firstShow: true
     property real slideFrom: 0
 
@@ -42,6 +41,17 @@ Item {
     property bool shown: true
     function dismiss() { shown = false; }
 
+    /*
+     * The sender has withdrawn this one.
+     *
+     * Set by the layer, which by then is drawing a frozen copy of what the
+     * notification said - see the note there. It means the same thing as a
+     * dismissal and takes the same path out; it just does not wait to be asked.
+     */
+    property bool closing: false
+
+    onClosingChanged: if (root.closing) root.dismiss();
+
     Component.onCompleted: {
         rebuildActions();
 
@@ -53,7 +63,6 @@ Item {
 
         const remaining = Math.max(0, root.meta.deadline - Date.now());
         root.startRemaining = remaining;
-        root.startFraction = remaining / Math.max(1, root.lifetime);
 
         /*
          * Note where this toast used to be, but do not start the slide yet.
@@ -67,6 +76,13 @@ Item {
         if (!root.firstShow && root.meta.lastY !== undefined) {
             root.capturedPrevY = root.meta.lastY;
             root.awaitingLayout = true;
+        }
+
+        // Before the urgency check: a critical toast never times out, but one
+        // its sender has taken back still goes.
+        if (root.closing) {
+            root.dismiss();
+            return;
         }
 
         if (root.critical) return;
@@ -207,9 +223,12 @@ Item {
         id: toastAnim
         anchors.fill: parent
         shown: root.shown
+        enabled: Settings.animations.notificationEntry
         // Only the first appearance is an arrival. A rebuild caused by a
-        // neighbour being added or removed must not replay it.
-        enabled: Settings.animations.notificationEntry && root.firstShow
+        // neighbour being added or removed must not replay it - but the toast
+        // still leaves the way it came in, however many times it has been
+        // rebuilt by then.
+        openEnabled: Settings.animations.notificationEntry && root.firstShow
         onCloseFinished: root.dismissed()
 
         /*
@@ -226,8 +245,8 @@ Item {
             emphasis: root.critical ? "alert" : "normal"
             serialSeed: root.notif ? String(root.notif.id) : ""
             // No serial. It is decoration for a surface you sit and read; on a
-            // toast it printed between the action buttons and the countdown bar
-            // and read as a fourth line of content in a three-line surface.
+            // toast it printed below the action buttons and read as a fourth
+            // line of content in a three-line surface.
             serial: false
             padding: 0
             notchTopLeft: true
@@ -429,30 +448,23 @@ Item {
         }
     }
 
-    // Timeout progress runs along the bottom edge, so the countdown is visible
-    // without adding a number to read.
-    Rectangle {
-        id: timerBar
-        anchors.bottom: parent.bottom
-        anchors.left: parent.left
-        height: 2
-        color: root.accent
-        visible: !root.critical
-
-        // Started by hand from Component.onCompleted rather than declared
-        // running, because both its start value and its duration come from the
-        // shared deadline and are not known until then. A toast rebuilt with
-        // two seconds left resumes with a two-second bar two-thirds spent.
-        width: root.width * root.startFraction
-
-        NumberAnimation {
-            id: countdown
-            target: timerBar; property: "width"
-            from: root.width * root.startFraction
-            to: 0
-            duration: root.startRemaining
-            onFinished: root.dismiss()
-        }
+    /*
+     * The dismissal clock.
+     *
+     * There used to be a 2px progress bar along the bottom edge, and the
+     * countdown WAS that bar: a NumberAnimation on its width whose completion
+     * dismissed the toast. With the bar gone the clock is just a clock.
+     *
+     * Started by hand from Component.onCompleted rather than declared running,
+     * because its duration comes from the shared deadline and is not known
+     * until then. A toast rebuilt with two seconds left resumes with two
+     * seconds, not with a fresh interval.
+     */
+    Timer {
+        id: countdown
+        interval: root.startRemaining
+        repeat: false
+        onTriggered: root.dismiss()
     }
 
     /*

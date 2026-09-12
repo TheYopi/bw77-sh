@@ -108,9 +108,9 @@ PaneScroll {
     PaneGroup {
         width: pane.innerWidth
         title: Settings.t("Input device")
+        page: true
         accentColor: Theme.accent
         glitch: false
-        expanded: false
 
 
         CyberText {
@@ -148,10 +148,10 @@ PaneScroll {
     PaneGroup {
         width: pane.innerWidth
         title: Settings.t("Hidden sources")
+        page: true
         subtitle: Settings.t("Substring match on an application or node name")
         accentColor: Theme.accent
         glitch: false
-        expanded: false
 
 
         Repeater {
@@ -241,10 +241,10 @@ PaneScroll {
     PaneGroup {
         width: pane.innerWidth
         title: Settings.t("Visualiser")
+        page: true
         subtitle: Settings.t("The spectrum widget is configured with the desktop widgets")
         accentColor: Theme.accent
         glitch: false
-        expanded: false
 
 
         SettingRow {

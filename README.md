@@ -22,15 +22,19 @@ the whole shell reads from one settings file you can also just edit by hand.
 Control Center. Clock, workspaces, active window, tray, battery, network,
 volume, keyboard layout, system monitor, and buttons for the launcher, quick
 settings, Control Center and session menu. One text size and one text weight for
-the whole bar, with workspace numbers held a step heavier.
+the whole bar, with workspace numbers held a step heavier. The battery reads as a
+single Nerd Font glyph, stepped every ten percent with its own run for charging,
+and pulses crimson below ten.
 
 **Dock** — pinned and running applications, autohide, right-click menus. Steam
 games resolve their real artwork rather than drawing a generic box.
 
 **Desktop widgets** — free-placed on the wallpaper, snapping to a grid from the
 top-left corner as you drag and resize. Clock, media player, audio visualiser,
-and system monitors that can be placed as one combined block or as separate CPU,
-memory, network and GPU widgets. GPU covers AMD, NVIDIA and Intel.
+battery, and system monitors that can be placed as one combined block or as
+separate CPU, memory, network and GPU widgets. GPU covers AMD, NVIDIA and Intel.
+The battery widget shows the charge curve, the current draw, the time to empty
+or to full, and the pack's condition where the hardware reports one.
 
 **Quick Settings** — volume and brightness sliders, media player, notification
 history, calendar, and tiles for network, Bluetooth, power profile, do not
@@ -340,11 +344,18 @@ utilisation there comes from perf counters, which need elevated privileges a
 desktop widget should not ask for. Check with
 `bash Scripts/gpu.sh` — it prints one JSON line per interval.
 
-**Steam games show a generic icon.** Check
-`bash Scripts/steam-icons.sh` — it prints one line per game it can find artwork
-for. Steam has changed its cache layout over the years; both known layouts are
-handled, but a listing of `~/.local/share/Steam/appcache/librarycache` is worth
-opening an issue with.
+**Steam games show a generic icon, or are named `STEAM_APP_1091500`.** Check
+`bash Scripts/steam-apps.sh` — it prints `<appid>`, the artwork it found, and
+the game's name, one line per app, with either of the last two blank when there
+is nothing to report.
+
+The artwork comes from `appcache/librarycache`, whose layout Steam has changed
+three times; all three are handled, and the current one names the icon after
+its own content hash. The name comes from `steamapps/appmanifest_<appid>.acf`,
+which lives next to the game rather than next to the artwork — so games on a
+second drive are found through `libraryfolders.vdf`, and a name missing for one
+of those is worth checking that file for. Either way, a listing of
+`~/.local/share/Steam/appcache/librarycache` is worth opening an issue with.
 
 **A desktop widget is on the wrong display.** `qs -c bw77-shell ipc call desktop
 widgets` prints what is actually stored.

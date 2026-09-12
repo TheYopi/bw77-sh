@@ -15,6 +15,15 @@ Item {
     property var keyboardLayouts: []
     property int layoutIndex: 0
 
+    /*
+     * Whether niri's overview is on screen.
+     *
+     * The wallpaper backdrop surface is only ever seen there, so knowing this
+     * is what lets the shell build it on demand rather than hold a full-screen
+     * surface per monitor for the whole session - see Modules/Wallpaper.
+     */
+    property bool overviewOpen: false
+
     function focusWorkspace(ws) {
         if (!ws) return;
         // `focus-workspace` accepts an index or a name, never the internal id.
@@ -69,6 +78,8 @@ Item {
                     root.keyboardLayouts = k.names;
                     root.layoutIndex = k.current_idx;
                     root.keyboardLayout = k.names[k.current_idx] || "";
+                } else if (e.OverviewOpenedOrClosed) {
+                    root.overviewOpen = !!e.OverviewOpenedOrClosed.is_open;
                 } else if (e.KeyboardLayoutSwitched) {
                     root.layoutIndex = e.KeyboardLayoutSwitched.idx;
                     root.keyboardLayout = root.keyboardLayouts[root.layoutIndex] || "";

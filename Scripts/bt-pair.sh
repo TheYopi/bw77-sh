@@ -49,7 +49,10 @@ feed() {
   echo "quit"
 }
 
-output=$(feed | bluetoothctl 2>&1)
+# Bounded: with bluetoothd not running, bluetoothctl waits for it forever
+# rather than failing, and this would sit behind the pair button for good. The
+# feed itself takes about fifteen seconds.
+output=$(feed | timeout 30 bluetoothctl 2>&1)
 
 # bluetoothctl exits 0 almost regardless, so the transcript decides.
 if printf '%s' "$output" | grep -qiE "Pairing successful|already.*paired|Connection successful"; then

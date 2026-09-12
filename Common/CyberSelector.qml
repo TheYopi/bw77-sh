@@ -41,7 +41,20 @@ Item {
     function navStep(delta) { root.step(delta); }
     function navActivate() { root.step(1); }
 
-    implicitWidth: 210
+    /*
+     * 240 to match CyberSlider, which is the control it sits next to in every
+     * settings pane.
+     *
+     * It was 210, so a column of settings had its steppers ending 30px short
+     * of its sliders - close enough to look like a mistake rather than a
+     * choice, and it put the right-hand arrow of a stepper in a different place
+     * from the right-hand end of the slider above it. The two are the same kind
+     * of control in the same column and should line up on both edges.
+     *
+     * Call sites that set an explicit width - the wallpaper picker's switches,
+     * the widget option editor - still override this.
+     */
+    implicitWidth: 240
     implicitHeight: 34
 
     readonly property int count: options ? options.length : 0

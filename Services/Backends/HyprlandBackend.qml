@@ -11,6 +11,8 @@ Item {
     property int focusedWorkspaceId: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : -1
     property string keyboardLayout: ""
     property var keyboardLayouts: []
+    // No overview to report; see NiriBackend.
+    property bool overviewOpen: false
 
     function focusWorkspace(ws) {
         // Hyprland does address workspaces by id.

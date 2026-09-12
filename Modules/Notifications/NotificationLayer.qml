@@ -70,14 +70,47 @@ Scope {
      * handles JS had wrapped came back as null, and the ones it had not came
      * back as a dangling pointer.
      *
-     * So every tracked notification is dropped from the list the moment it says
-     * it is closing. The handle is still alive while its own signal is being
-     * delivered, which is what makes filtering by identity safe here - it is
-     * the last moment it ever will be.
+     * So the handle leaves the list the moment it says it is closing. It is
+     * still alive while its own signal is being delivered, which is what makes
+     * both the identity match and the property reads below safe here - this is
+     * the last moment either will be.
+     *
+     * --- but it still gets to leave properly
+     *
+     * Dropping the handle outright meant the toast was destroyed on that same
+     * frame, and an application that withdraws its notifications rather than
+     * letting them expire - Telegram replaces its own every few seconds - had
+     * toasts blinking out of existence rather than tearing out. That is most
+     * toasts on a machine that uses one of those applications.
+     *
+     * What goes into the list in its place is a frozen copy: a plain object
+     * carrying the strings the toast was already drawing, which cannot dangle
+     * because it belongs to nobody. The toast reads properties off it exactly
+     * as it read them off the handle, plays its exit, and removes itself
+     * through the ordinary dismissal path. The actions come across as their
+     * labels with the invocation stripped, so the buttons do not change shape
+     * on the way out - there is nothing left to invoke by then.
+     *
+     * `closing` rides on the copy rather than being kept in a list here on
+     * purpose. A separate list would have to be written now, and writing it
+     * re-evaluates every delegate's bindings - including the one still holding
+     * the handle that is being destroyed as we speak. Putting the flag in the
+     * object means the toast learns of it at the same moment it is handed the
+     * copy, which is a frame later and nothing dangerous in sight.
      */
     function forget(notif) {
-        scope.scheduleList(scope.currentList().filter(n => n !== notif));
-        delete scope.toastMeta[notif.id];
+        const frozen = {
+            id: notif.id,
+            appName: notif.appName,
+            appIcon: notif.appIcon,
+            summary: notif.summary,
+            body: notif.body,
+            urgency: notif.urgency,
+            actions: (notif.actions || []).map(a => ({ text: a.text, invoke: () => {} })),
+            closing: true
+        };
+
+        scope.scheduleList(scope.currentList().map(n => n === notif ? frozen : n));
     }
 
     Timer {
@@ -136,8 +169,11 @@ Scope {
          * alive for the rest of the session and the application that sent it is
          * never told the message was read. Closing it here fires `closed`,
          * which runs forget() - harmlessly, the list no longer holds it.
+         *
+         * A frozen copy has no handle behind it and nothing to hand back: its
+         * sender closed it, which is how it came to be frozen.
          */
-        if (handle) handle.dismiss();
+        if (handle && typeof handle.dismiss === "function") handle.dismiss();
     }
 
     NotificationServer {
@@ -176,78 +212,102 @@ Scope {
     Variants {
         model: Quickshell.screens
 
-        PanelWindow {
-            id: win
+        Scope {
+            id: screenScope
             required property var modelData
-            screen: modelData
 
-            WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.namespace: "bw77-notifications"
+            /*
+             * The window exists only while there is a toast to draw.
+             *
+             * It used to be built at startup and hidden with `visible` when the
+             * stack was empty - but a hidden window keeps everything it had
+             * while shown: its render thread, its graphics context, its scene
+             * graph and glyph caches. After the first notification of a session
+             * every display carried all of that for good, to draw nothing.
+             *
+             * Removing it when the list empties cannot cut an animation short:
+             * a toast only leaves the list after its own exit has played (see
+             * onDismissed below), so by the time this goes false there is
+             * nothing left on screen.
+             */
+            LazyLoader {
+                active: scope.visibleList.length > 0
 
-            readonly property string pos: Settings.notifications.position
-            readonly property bool onTop: pos.indexOf("top") !== -1
-            readonly property bool onRight: pos.indexOf("right") !== -1
-            readonly property bool onCenter: pos.indexOf("center") !== -1
+                PanelWindow {
+                    id: win
+                    screen: screenScope.modelData
 
-            // Overlay layers ignore the bar's exclusion zone, so the offset has
-            // to be applied by hand or toasts sit on top of the bar.
-            readonly property int barOffset: {
-                if (!Settings.notifications.avoidBar) return 0;
-                if (!Settings.bar.exclusive) return 0;
-                const barAtTop = Settings.bar.position === "top";
-                if (win.onTop && barAtTop) return Settings.bar.height;
-                if (!win.onTop && !barAtTop) return Settings.bar.height;
-                return 0;
-            }
+                    WlrLayershell.layer: WlrLayer.Overlay
+                    WlrLayershell.namespace: "bw77-notifications"
 
-            readonly property int edge: Settings.notifications.edgeMargin
+                    readonly property string pos: Settings.notifications.position
+                    readonly property bool onTop: pos.indexOf("top") !== -1
+                    readonly property bool onRight: pos.indexOf("right") !== -1
+                    readonly property bool onCenter: pos.indexOf("center") !== -1
 
-            anchors {
-                top: win.onTop
-                bottom: !win.onTop
-                left: !win.onRight || win.onCenter
-                right: win.onRight || win.onCenter
-            }
+                    // Overlay layers ignore the bar's exclusion zone, so the offset has
+                    // to be applied by hand or toasts sit on top of the bar.
+                    readonly property int barOffset: {
+                        if (!Settings.notifications.avoidBar) return 0;
+                        if (!Settings.bar.exclusive) return 0;
+                        const barAtTop = Settings.bar.position === "top";
+                        if (win.onTop && barAtTop) return Settings.bar.height;
+                        if (!win.onTop && !barAtTop) return Settings.bar.height;
+                        return 0;
+                    }
 
-            margins {
-                top: win.edge + (win.onTop ? win.barOffset : 0)
-                bottom: win.edge + (win.onTop ? 0 : win.barOffset)
-                left: win.onCenter ? 0 : win.edge
-                right: win.onCenter ? 0 : win.edge
-            }
+                    readonly property int edge: Settings.notifications.edgeMargin
 
-            // Centre anchors both sides, so the window spans the screen and the
-            // stack is centred inside it instead of the window being centred.
-            implicitWidth: win.onCenter
-                ? 0
-                : Settings.notifications.width + win.edge * 2
-            implicitHeight: Math.max(1, stack.implicitHeight + win.edge * 2)
-            color: "transparent"
-            exclusionMode: ExclusionMode.Ignore
-            visible: scope.visibleList.length > 0
+                    anchors {
+                        top: win.onTop
+                        bottom: !win.onTop
+                        left: !win.onRight || win.onCenter
+                        right: win.onRight || win.onCenter
+                    }
 
-            mask: Region { item: stack }
+                    margins {
+                        top: win.edge + (win.onTop ? win.barOffset : 0)
+                        bottom: win.edge + (win.onTop ? 0 : win.barOffset)
+                        left: win.onCenter ? 0 : win.edge
+                        right: win.onCenter ? 0 : win.edge
+                    }
 
-            // Two Columns rather than one with conditional anchors: assigning
-            // undefined to an anchor does not clear it, so flipping top/bottom
-            // would leave the stack stretched between both edges.
-            Column {
-                id: stack
-                anchors.horizontalCenter: parent.horizontalCenter
-                // Plain y rather than conditional anchors, for the same reason
-                // as the bar rule: an anchor set to undefined is not cleared.
-                y: win.onTop ? 0 : parent.height - height
-                spacing: Theme.space2
+                    // Centre anchors both sides, so the window spans the screen and the
+                    // stack is centred inside it instead of the window being centred.
+                    implicitWidth: win.onCenter
+                        ? 0
+                        : Settings.notifications.width + win.edge * 2
+                    implicitHeight: Math.max(1, stack.implicitHeight + win.edge * 2)
+                    color: "transparent"
+                    exclusionMode: ExclusionMode.Ignore
 
-                Repeater {
-                    model: scope.visibleList
-                    NotificationToast {
-                        required property var modelData
-                        notif: modelData
-                        meta: modelData ? scope.metaFor(modelData.id) : ({})
-                        // Removal happens only after the tear-out has run; the
-                        // toast owns its own exit timing.
-                        onDismissed: if (modelData) scope.dismiss(modelData.id)
+                    mask: Region { item: stack }
+
+                    // Two Columns rather than one with conditional anchors: assigning
+                    // undefined to an anchor does not clear it, so flipping top/bottom
+                    // would leave the stack stretched between both edges.
+                    Column {
+                        id: stack
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        // Plain y rather than conditional anchors, for the same reason
+                        // as the bar rule: an anchor set to undefined is not cleared.
+                        y: win.onTop ? 0 : parent.height - height
+                        spacing: Theme.space2
+
+                        Repeater {
+                            model: scope.visibleList
+                            NotificationToast {
+                                required property var modelData
+                                notif: modelData
+                                meta: modelData ? scope.metaFor(modelData.id) : ({})
+                                // Withdrawn by its sender: leave now rather than on the
+                                // countdown, but leave rather than vanish.
+                                closing: !!(modelData && modelData.closing)
+                                // Removal happens only after the tear-out has run; the
+                                // toast owns its own exit timing.
+                                onDismissed: if (modelData) scope.dismiss(modelData.id)
+                            }
+                        }
                     }
                 }
             }

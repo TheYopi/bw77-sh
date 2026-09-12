@@ -56,7 +56,7 @@ PanelWindow {
             // surface ignores exclusive zones so it spans the whole screen,
             // which means the bar's height has to be accounted for here.
             readonly property real barSpace: Settings.bar.height
-                + (Settings.bar.style === "floating" ? Settings.bar.marginV : 0)
+                + (Settings.bar.style !== "attached" ? Settings.bar.marginV : 0)
                 + Theme.space2
 
             y: Settings.bar.position === "top"
@@ -65,6 +65,42 @@ PanelWindow {
 
             width: content.item ? content.item.implicitWidth + padding * 2 : 320
             height: content.item ? content.item.implicitHeight + padding * 2 : 200
+
+            /*
+             * --- the card follows its contents rather than jumping to them
+             *
+             * Most of these popups are a fixed size once they are open. The
+             * notification history is not: clearing a message, or emptying the
+             * last one and dropping to "Nothing here", changes how tall the
+             * content wants to be while the reader is looking at it, and the
+             * card resized to match on the next frame - so a message that had
+             * just spent 200ms tearing itself out was followed by the whole
+             * window snapping shut around the hole.
+             *
+             * Easing the frame instead lets the card close the gap over roughly
+             * the span the row took to leave. Only while the popup is open: a
+             * closing surface is being scaled and faded by GlitchBox, and a
+             * resize easing underneath that would fight it. The first sizing is
+             * not animated either - a Behavior does not run on the binding that
+             * establishes a property - so a popup still arrives at its own size.
+             */
+            Behavior on height {
+                enabled: Popups.open && !Theme.reducedMotion
+                    && Settings.animations.surfaceOpen
+                NumberAnimation {
+                    duration: Theme.durationFor("bar")
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Behavior on width {
+                enabled: Popups.open && !Theme.reducedMotion
+                    && Settings.animations.surfaceOpen
+                NumberAnimation {
+                    duration: Theme.durationFor("bar")
+                    easing.type: Easing.OutCubic
+                }
+            }
             padding: Theme.space4
             serialSeed: Popups.current
 
@@ -77,6 +113,7 @@ PanelWindow {
                     case "clock":   return clockC;
                     case "network": return networkC;
                     case "sysmon":   return sysmonC;
+                    case "notifications": return notificationsC;
                     case "trayMenu": return trayMenuC;
                         default:         return null;
                     }
@@ -87,6 +124,7 @@ PanelWindow {
             Component { id: clockC;   CalendarPopup {} }
             Component { id: networkC; NetworkPopup {} }
             Component { id: sysmonC;   SysMonPopup {} }
+            Component { id: notificationsC; NotificationsPopup {} }
             Component { id: trayMenuC; TrayMenu {} }
             }
     }

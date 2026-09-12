@@ -22,8 +22,8 @@ PanelWindow {
     color: "transparent"
 
     // Without this the compositor shrinks the surface out of the bar's reserved
-    // zone, so the dimming stops short of the bar and the dock instead of
-    // covering the screen.
+    // zone, so a click over the bar or the dock would miss it and the surface
+    // would not dismiss.
     exclusionMode: ExclusionMode.Ignore
 
     property string query: ""
@@ -181,10 +181,37 @@ PanelWindow {
     onQueryChanged: selectedIndex = 0
     onActiveCategoryChanged: selectedIndex = 0
 
-    Rectangle {
+    /*
+     * A click target, not a scrim.
+     *
+     * This used to be a translucent fill over the whole screen. The surface
+     * still covers the screen - it has to, so that clicking anywhere outside
+     * dismisses - but it no longer paints anything, so what is behind stays
+     * exactly as bright as it was.
+     *
+     * The launcher is opaque and bordered and does not need the desktop knocked
+     * back to be legible; that was what the dimming was for, and it was
+     * costing a full-screen composite on every open as well.
+     */
+    MouseArea {
         anchors.fill: parent
-        color: Theme.alpha(Theme.bgDeep, 0.78)
-        MouseArea { anchors.fill: parent; onClicked: Shell.launcherOpen = false }
+        onClicked: Shell.launcherOpen = false
+    }
+
+    /*
+     * A closed launcher forgets what was typed into it.
+     *
+     * The surface is kept alive across a close so it has something to animate
+     * out, which means the field would otherwise still be holding the last
+     * query when it came back - reopening onto somebody else's search, with the
+     * strip already unrolled.
+     */
+    Connections {
+        target: Shell
+        function onLauncherOpenChanged() {
+            if (Shell.launcherOpen) input.forceActiveFocus();
+            else input.text = "";
+        }
     }
 
     GlitchBox {
@@ -222,23 +249,64 @@ PanelWindow {
                 accentColor: Theme.danger
             }
 
-            // --- search
-            NotchRect {
+            /*
+             * --- search: absent until there is a query to show
+             *
+             * The field used to sit there permanently with a placeholder in it,
+             * which on a surface that already has the keyboard is 38px spent
+             * saying "you may type" to someone who is about to type anyway. It
+             * also invited a click into a field that never needed one.
+             *
+             * So it does what the font picker does: the strip is nothing at all
+             * until the first keystroke, rolls open under the header, and rolls
+             * shut again the moment the query is emptied - by backspace or by
+             * the first Escape. The list gets the height back either way.
+             *
+             * The TextInput itself never goes away, and this is why the strip
+             * collapses by height and opacity rather than by `visible`: an
+             * invisible item cannot hold Qt focus, and the field holding focus
+             * while it is not on screen is the entire trick. Keystrokes land in
+             * a real text field the whole time - which keeps selection, paste
+             * and input methods working, none of which a hand-rolled key
+             * handler would have given us.
+             */
+            Item {
                 id: searchBox
                 anchors.top: header.bottom
-                anchors.topMargin: Theme.space3
+                anchors.topMargin: active ? Theme.space3 : 0
                 anchors.left: parent.left
                 anchors.right: parent.right
-                height: 38
-                fillColor: Theme.alpha(Theme.bgDeep, 0.9)
-                strokeColor: input.activeFocus ? Theme.accent : Theme.border
-                notch: Theme.notchSmall
-                notchTopLeft: false
-                notchTopRight: false
-                notchBottomRight: true
-                notchBottomLeft: false
 
-                Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                readonly property bool active: input.text !== ""
+
+                height: active ? 38 : 0
+                opacity: active ? 1 : 0
+                clip: true
+
+                Behavior on height {
+                    enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
+                    NumberAnimation {
+                        duration: Theme.durFast
+                        easing.type: Theme.easeSnap
+                    }
+                }
+                Behavior on opacity {
+                    enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
+                    NumberAnimation { duration: Theme.durFast }
+                }
+
+                NotchRect {
+                    anchors.fill: parent
+                    fillColor: Theme.alpha(Theme.bgDeep, 0.9)
+                    strokeColor: input.activeFocus ? Theme.accent : Theme.border
+                    notch: Theme.notchSmall
+                    notchTopLeft: false
+                    notchTopRight: false
+                    notchBottomRight: true
+                    notchBottomLeft: false
+
+                    Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                }
 
                 CyberText {
                     id: prompt
@@ -268,44 +336,37 @@ PanelWindow {
                     clip: true
 
                     onTextChanged: {
-                    root.query = text;
-                    root.keyboardMode = true;
-                }
+                        root.query = text;
+                        root.keyboardMode = true;
+                    }
 
-                    // Built-in delegate rather than a hand-positioned rectangle:
-                    // the old one sat at a fixed offset and painted a blinking dash
-                    // across the placeholder text.
+                    // Steady, not blinking. A caret pulsing away in the corner
+                    // of a surface that is only ever open for a couple of
+                    // seconds is motion that carries no information - the field
+                    // is not asking whether you meant to type, it is showing
+                    // you what you already typed.
                     cursorDelegate: Rectangle {
                         width: 8
                         height: 2
                         y: parent.height - 4
                         color: Theme.accent
-
-                        SequentialAnimation on opacity {
-                            running: !Theme.reducedMotion
-                            loops: Animation.Infinite
-                            NumberAnimation { to: 0.2; duration: 500 }
-                            NumberAnimation { to: 1.0; duration: 500 }
-                        }
                     }
 
-                    Keys.onEscapePressed: Shell.launcherOpen = false
+                    // First press empties the field, which rolls the strip shut;
+                    // the second closes the launcher. Escaping straight out of a
+                    // narrowed list means reopening and retyping to fix one
+                    // character of it - the same reasoning as the font picker.
+                    Keys.onEscapePressed: {
+                        if (input.text !== "") input.text = "";
+                        else Shell.launcherOpen = false;
+                    }
                     Keys.onDownPressed: root.selectByKey(root.selectedIndex + 1)
                     Keys.onUpPressed: root.selectByKey(root.selectedIndex - 1)
                     Keys.onReturnPressed: root.launch(root.selectedIndex)
                     Keys.onTabPressed: root.cycleCategory(1)
                     // Shift+Tab arrives as Backtab, not as Tab with a modifier.
                     Keys.onBacktabPressed: root.cycleCategory(-1)
-
-                    CyberText {
-                        visible: input.text === ""
-                        text: Settings.t("Search applications")
-                        role: "body"
-                        caps: false
-                        color: Theme.textMuted
-                    }
                 }
-
             }
 
             readonly property bool horizontalCats:
@@ -369,6 +430,12 @@ PanelWindow {
                             notchTopRight: false
                             notchBottomRight: true
                             notchBottomLeft: false
+
+                            // Both, not just the fill: the outline appearing on
+                            // the same frame the wash starts fading in is what
+                            // made picking a category feel like a hard cut.
+                            Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+                            Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
                         }
 
                         CyberText {
@@ -379,6 +446,8 @@ PanelWindow {
                             role: "label"
                             color: catItem.current ? Theme.danger
                                 : (catMouse.containsMouse ? Theme.accent : Theme.textDim)
+
+                            Behavior on color { ColorAnimation { duration: Theme.durFast } }
                         }
 
                         MouseArea {
@@ -431,6 +500,19 @@ PanelWindow {
                         notchTopRight: false
                         notchBottomRight: true
                         notchBottomLeft: false
+
+                        /*
+                         * The selection travels rather than teleports.
+                         *
+                         * Holding an arrow key walks the highlight down a list
+                         * of results, and with no transition each step was a
+                         * separate hard flash - twenty of them on the way to the
+                         * bottom. Fading the old row out as the new one comes up
+                         * turns that into one continuous movement, and at the
+                         * hover speed it still keeps up with the key repeat.
+                         */
+                        Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+                        Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
                     }
 
                     IconImage {
@@ -457,6 +539,8 @@ PanelWindow {
                             text: row.modelData.entry.name
                             role: "body"
                             color: row.current ? Theme.accent : Theme.text
+
+                            Behavior on color { ColorAnimation { duration: Theme.durFast } }
                         }
 
                         CyberText {
@@ -506,8 +590,15 @@ PanelWindow {
                 // Empty state should tell you what to do next, not just say "nothing".
                 Column {
                     anchors.centerIn: parent
-                    visible: root.results.length === 0
+                    // Faded rather than switched: typing one character past the
+                    // last match used to replace the list with a block of text
+                    // between two frames, which reads as an error rather than
+                    // as the list having run out.
+                    opacity: root.results.length === 0 ? 1 : 0
+                    visible: opacity > 0.01
                     spacing: Theme.space2
+
+                    Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
 
                     CyberText {
                         anchors.horizontalCenter: parent.horizontalCenter

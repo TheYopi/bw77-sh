@@ -25,6 +25,42 @@ Column {
 
     signal changed(string key, var value)
 
+    /*
+     * The colour roles a widget can be given. One list, because the text and
+     * the frame choose from the same palette - and because the six text-colour
+     * entries below were already six copies of it.
+     */
+    readonly property var colourChoices: [
+        { value: "",         label: Settings.t("Default") },
+        { value: "text",     label: Settings.t("Text") },
+        { value: "textDim",  label: Settings.t("Dim") },
+        { value: "accent",   label: Settings.t("Accent") },
+        { value: "danger",   label: Settings.t("Crimson") },
+        { value: "warn",     label: Settings.t("Yellow") },
+        { value: "gold",     label: Settings.t("Gold") }
+    ]
+
+    // Between the text colour and the outline on every widget, so the three
+    // appearance settings read top to bottom as text, frame, frame's edge.
+    readonly property var frameField: (
+        { key: "frameRole", label: Settings.t("Frame colour"), type: "choice", def: "",
+          choices: root.colourChoices,
+          hint: "Default follows the widget, including the colours it changes on its own" })
+
+    readonly property var textField: (
+        { key: "colorRole", label: Settings.t("Text colour"), type: "choice", def: "",
+          choices: root.colourChoices })
+
+    readonly property var outlineField: (
+        { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
+          choices: [
+              { value: "inherit", label: Settings.t("Default") },
+              { value: "hover",   label: Settings.t("On hover") },
+              { value: "always",  label: Settings.t("Always") },
+              { value: "never",   label: Settings.t("Never") }
+          ],
+          hint: "Default follows the setting on this tab" })
+
     readonly property var schema: ({
         "activeWindow": [
             { key: "mode", label: Settings.t("Show"), type: "choice", def: "appAndTitle",
@@ -48,6 +84,7 @@ Column {
                   { value: "gold",     label: Settings.t("Gold") }
               ] }
         ,
+            root.frameField,
             { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
               choices: [
                   { value: "inherit", label: Settings.t("Default") },
@@ -80,6 +117,7 @@ Column {
                   { value: "gold",     label: Settings.t("Gold") }
               ] }
         ,
+            root.frameField,
             { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
               choices: [
                   { value: "inherit", label: Settings.t("Default") },
@@ -123,6 +161,7 @@ Column {
                   { value: "warn",     label: Settings.t("Yellow") },
                   { value: "gold",     label: Settings.t("Gold") }
               ] },
+            root.frameField,
             { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
               choices: [
                   { value: "inherit", label: Settings.t("Default") },
@@ -145,6 +184,7 @@ Column {
                   { value: "gold",     label: Settings.t("Gold") }
               ] }
         ,
+            root.frameField,
             { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
               choices: [
                   { value: "inherit", label: Settings.t("Default") },
@@ -178,6 +218,7 @@ Column {
             { key: "scale", label: Settings.t("Icon scale"), type: "real",
               def: 1.0, min: 0.5, max: 2.0, step: 0.05,
               hint: "Multiplies the shared icon size, for this widget only" },
+            root.frameField,
             { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
               choices: [
                   { value: "inherit", label: Settings.t("Default") },
@@ -188,6 +229,7 @@ Column {
               hint: "Default follows the setting on this tab" }
         ],
         "quickSettings": [
+            root.frameField,
             { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
               choices: [
                   { value: "inherit", label: Settings.t("Default") },
@@ -201,6 +243,7 @@ Column {
               hint: "0 uses the theme size" }
         ],
         "controlCenter": [
+            root.frameField,
             { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
               choices: [
                   { value: "inherit", label: Settings.t("Default") },
@@ -211,6 +254,7 @@ Column {
               hint: "Default follows the setting on this tab" }
         ],
         "launcher": [
+            root.frameField,
             { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
               choices: [
                   { value: "inherit", label: Settings.t("Default") },
@@ -221,6 +265,7 @@ Column {
               hint: "Default follows the setting on this tab" }
         ],
         "session": [
+            root.frameField,
             { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
               choices: [
                   { value: "inherit", label: Settings.t("Default") },
@@ -231,6 +276,20 @@ Column {
               hint: "Default follows the setting on this tab" }
         ],
         "battery": [
+            { key: "showPercentage", label: Settings.t("Percentage"), type: "bool", def: true,
+              hint: "The glyph alone carries the level to the nearest ten" },
+            { key: "colorRole", label: Settings.t("Text colour"), type: "choice", def: "",
+              choices: [
+                  { value: "",         label: Settings.t("Default") },
+                  { value: "text",     label: Settings.t("Text") },
+                  { value: "textDim",  label: Settings.t("Dim") },
+                  { value: "accent",   label: Settings.t("Accent") },
+                  { value: "danger",   label: Settings.t("Crimson") },
+                  { value: "warn",     label: Settings.t("Yellow") },
+                  { value: "gold",     label: Settings.t("Gold") }
+              ],
+              hint: "The low-battery pulse overrides this while it runs" },
+            root.frameField,
             { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
               choices: [
                   { value: "inherit", label: Settings.t("Default") },
@@ -240,10 +299,46 @@ Column {
               ],
               hint: "Default follows the setting on this tab" },
         ],
+        "notifications": [
+            { key: "colorRole", label: Settings.t("Text colour"), type: "choice", def: "",
+              choices: [
+                  { value: "",         label: Settings.t("Default") },
+                  { value: "text",     label: Settings.t("Text") },
+                  { value: "textDim",  label: Settings.t("Dim") },
+                  { value: "accent",   label: Settings.t("Accent") },
+                  { value: "danger",   label: Settings.t("Crimson") },
+                  { value: "warn",     label: Settings.t("Yellow") },
+                  { value: "gold",     label: Settings.t("Gold") }
+              ],
+              hint: "The bell dims on its own when there is nothing waiting" },
+            root.frameField,
+            { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
+              choices: [
+                  { value: "inherit", label: Settings.t("Default") },
+                  { value: "hover",   label: Settings.t("On hover") },
+                  { value: "always",  label: Settings.t("Always") },
+                  { value: "never",   label: Settings.t("Never") }
+              ],
+              hint: "Default follows the setting on this tab" }
+        ],
+        /*
+         * Volume, network and the system monitor had no entry here at all, so
+         * selecting one opened an empty options block. All three already route
+         * their text through BarItem.cfgColor, so these are wired to something
+         * rather than decorative.
+         */
+        "volume":  [ root.textField, root.frameField, root.outlineField ],
+        "network": [ root.textField, root.frameField, root.outlineField ],
+        "sysmon":  [
+            { key: "showDividers", label: Settings.t("Dividers"), type: "bool", def: true },
+            root.textField, root.frameField, root.outlineField
+        ],
+
         "spacer": [
             { key: "width", label: Settings.t("Width"), type: "int",
               def: 16, min: 4, max: 300, step: 4, suffix: "px" }
         ,
+            root.frameField,
             { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
               choices: [
                   { value: "inherit", label: Settings.t("Default") },

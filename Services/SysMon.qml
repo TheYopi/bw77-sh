@@ -26,7 +26,29 @@ Singleton {
      * span a minute - the live values update ten times a second, the history
      * once.
      */
-    property real intervalSec: 0.1
+
+    /*
+     * Ten a second is the rate the GAUGES need, not the rate everything needs.
+     *
+     * The reasoning above holds for an arc sweeping under a needle or a widget
+     * filling a corner of the desktop. It does not hold for the bar, which
+     * prints three integers in a 38px column: at ten a second that is ten
+     * rounds of JSON parsing, ten sets of property writes, ten text relayouts
+     * and ten repaints of a window that spans the screen, to redraw numbers
+     * that mostly land on the same value twice in a row. On a laptop that is
+     * the difference between a bar window that idles and one that never does.
+     *
+     * So consumers say which they are. A fast holder gets the original rate; a
+     * plain holder is happy with twice a second, which still moves often enough
+     * to read as live and costs a fifth as much. The fastest holder wins, so
+     * opening the system popup over a slow bar lifts the whole thing to 10Hz
+     * and drops it back on close.
+     */
+    property real fastIntervalSec: 0.1
+    property real slowIntervalSec: 0.5
+
+    readonly property real intervalSec: fastUsers > 0 ? fastIntervalSec : slowIntervalSec
+
     property int historyLength: 60
 
     readonly property int historyStride:
@@ -41,10 +63,21 @@ Singleton {
      * widget and no popup open.
      */
     property int users: 0
+
+    // Holders that specifically want the fast rate - see the note on
+    // fastIntervalSec. Every fast holder is also a plain holder.
+    property int fastUsers: 0
+
     readonly property bool active: users > 0
 
     function acquire() { users = users + 1; }
     function release() { users = Math.max(0, users - 1); }
+
+    function acquireFast() { users = users + 1; fastUsers = fastUsers + 1; }
+    function releaseFast() {
+        users = Math.max(0, users - 1);
+        fastUsers = Math.max(0, fastUsers - 1);
+    }
 
     property int cpu: 0
     property int clock: 0          // MHz
@@ -92,6 +125,22 @@ Singleton {
         tempHistory = [];
         downHistory = [];
         upHistory = [];
+    }
+
+    /*
+     * The interval is an argument to the sampler, and the sampler reads its
+     * arguments once at startup - so a Process already running keeps the rate
+     * it was launched with no matter what the command binding says now. Bounce
+     * it, and only when there is something running to bounce.
+     *
+     * The binding is restored rather than left as a plain assignment: writing
+     * `running` imperatively would sever it from `active`, and the poller would
+     * then keep going after the last consumer let go.
+     */
+    onIntervalSecChanged: {
+        if (!active) return;
+        proc.running = false;
+        proc.running = Qt.binding(() => root.active);
     }
 
     function push(arr, v) {

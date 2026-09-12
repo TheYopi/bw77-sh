@@ -8,8 +8,8 @@ Item {
     id: root
 
     // Polling runs only while something is displaying it.
-    Component.onCompleted: SysMon.acquire()
-    Component.onDestruction: SysMon.release()
+    Component.onCompleted: SysMon.acquireFast()
+    Component.onDestruction: SysMon.releaseFast()
     implicitWidth: 340
     implicitHeight: col.implicitHeight
 
@@ -25,43 +25,59 @@ Item {
             glitch: false
         }
 
+        /*
+         * Keys, not readings. See the same note in Bar/Widgets/SysMonWidget.
+         *
+         * An array literal naming SysMon.cpu and friends handed the Repeater a
+         * new model ten times a second, so this popup destroyed and rebuilt
+         * three Graphs - each one a Shape with two paths and a polyline of
+         * sixty points - on every sample, for as long as it was open.
+         */
         Repeater {
-            model: [
-                { label: "CPU",  value: SysMon.cpu + "%",
-                  history: SysMon.cpuHistory,  color: Theme.c("chartCpu") },
-                { label: Settings.t("MEM"),  value: `${SysMon.memUsedLabel} / ${SysMon.memTotalLabel}`,
-                  history: SysMon.memHistory,  color: Theme.c("chartRam") },
-                { label: Settings.t("TEMP"), value: SysMon.temp + "\u00B0C",
-                  history: SysMon.tempHistory, color: Theme.c("chartTemp") }
-            ]
+            model: ["cpu", "mem", "temp"]
 
             Column {
-                required property var modelData
+                id: metric
+                required property string modelData
+
+                readonly property string label: modelData === "cpu" ? "CPU"
+                    : modelData === "mem" ? Settings.t("MEM") : Settings.t("TEMP")
+
+                readonly property string reading: modelData === "cpu" ? SysMon.cpu + "%"
+                    : modelData === "mem" ? `${SysMon.memUsedLabel} / ${SysMon.memTotalLabel}`
+                    : SysMon.temp + "\u00B0C"
+
+                readonly property var history: modelData === "cpu" ? SysMon.cpuHistory
+                    : modelData === "mem" ? SysMon.memHistory : SysMon.tempHistory
+
+                readonly property color tint: modelData === "cpu" ? Theme.c("chartCpu")
+                    : modelData === "mem" ? Theme.c("chartRam") : Theme.c("chartTemp")
+
                 width: col.width
                 spacing: 2
 
                 Row {
                     width: parent.width
                     CyberText {
-                        text: modelData.label
+                        text: metric.label
                         role: "micro"
                         color: Theme.textMuted
                         width: 50
                     }
                     CyberText {
-                        text: modelData.value
+                        text: metric.reading
                         role: "mono"
                         font.pixelSize: Theme.fontSmall
-                        color: modelData.color
+                        color: metric.tint
                     }
                 }
 
                 Graph {
                     width: parent.width
                     height: 48
-                    values: modelData.history
+                    values: metric.history
                     maxValue: 100
-                    lineColor: modelData.color
+                    lineColor: metric.tint
                 }
             }
         }

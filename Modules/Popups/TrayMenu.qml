@@ -78,7 +78,11 @@ Item {
 
                     NotchRect {
                         anchors.fill: parent
-                        visible: entryMouse.containsMouse && entryCol.modelData.enabled
+                        // Faded rather than switched, so running the pointer
+                        // down the menu is one continuous highlight instead of
+                        // a row-by-row flicker.
+                        opacity: entryMouse.containsMouse && entryCol.modelData.enabled ? 1 : 0
+                        visible: opacity > 0.01
                         fillColor: Theme.alpha(Theme.accent, 0.18)
                         strokeColor: Theme.alpha(Theme.accent, 0.7)
                         notch: 5
@@ -86,6 +90,8 @@ Item {
                         notchTopRight: false
                         notchBottomRight: true
                         notchBottomLeft: false
+
+                        Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
                     }
 
                     Row {
@@ -132,6 +138,8 @@ Item {
                             color: entryCol.modelData.enabled
                                 ? (entryMouse.containsMouse ? Theme.accent : Theme.text)
                                 : Theme.textMuted
+
+                            Behavior on color { ColorAnimation { duration: Theme.durFast } }
                         }
                     }
 
@@ -188,7 +196,8 @@ Item {
                                 NotchRect {
                                     anchors.fill: parent
                                     anchors.leftMargin: Theme.space4
-                                    visible: subMouse.containsMouse && modelData.enabled
+                                    opacity: subMouse.containsMouse && modelData.enabled ? 1 : 0
+                                    visible: opacity > 0.01
                                     fillColor: Theme.alpha(Theme.accent, 0.16)
                                     strokeColor: Theme.alpha(Theme.accent, 0.6)
                                     notch: 4
@@ -196,6 +205,8 @@ Item {
                                     notchTopRight: false
                                     notchBottomRight: true
                                     notchBottomLeft: false
+
+                                    Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
                                 }
 
                                 CyberText {
@@ -208,6 +219,8 @@ Item {
                                     color: modelData.enabled
                                         ? (subMouse.containsMouse ? Theme.accent : Theme.textDim)
                                         : Theme.textMuted
+
+                                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
                                 }
 
                                 MouseArea {

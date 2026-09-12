@@ -42,6 +42,7 @@ Loader {
         case "activeWindow":   return activeWindowC;
         case "clock":          return clockC;
         case "sysmon":         return sysmonC;
+        case "notifications":  return notificationsC;
         case "tray":           return trayC;
         case "volume":         return volumeC;
         case "network":        return networkC;
@@ -78,10 +79,11 @@ Loader {
     Component { id: activeWindowC; ActiveWindow {} }
     Component { id: clockC;        Clock {} }
     Component { id: sysmonC;       SysMonWidget {} }
+    Component { id: notificationsC; Notifications {} }
     Component { id: trayC;         Tray {} }
     Component { id: volumeC;       Volume {} }
     Component { id: networkC;      Network {} }
-    Component { id: batteryC;      Battery {} }
+    Component { id: batteryC;      BatteryWidget {} }
     Component { id: keyboardC;     KeyboardLayout {} }
     Component { id: sessionC;      SessionButton {} }
     Component { id: spacerC;       Item { property var config; width: config && config.width ? config.width : 16 } }

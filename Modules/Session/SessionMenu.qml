@@ -21,21 +21,36 @@ PanelWindow {
     color: "transparent"
 
     // Without this the compositor shrinks the surface out of the bar's reserved
-    // zone, so the dimming stops short of the bar and the dock instead of
-    // covering the screen.
+    // zone, so a click over the bar or the dock would miss it and the surface
+    // would not dismiss.
     exclusionMode: ExclusionMode.Ignore
 
-    Rectangle {
+    /*
+     * A click target, not a scrim.
+     *
+     * This used to be a translucent fill over the whole screen. The surface
+     * still covers the screen - it has to, so that clicking anywhere outside
+     * dismisses - but it no longer paints anything, so what is behind stays
+     * exactly as bright as it was.
+     *
+     * The menu is opaque and bordered and does not need the desktop knocked
+     * back to be legible; that was what the dimming was for, and it was
+     * costing a full-screen composite on every open as well.
+     */
+    MouseArea {
         anchors.fill: parent
-        color: Theme.alpha(Theme.bgDeep, 0.82)
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: Shell.sessionOpen = false
-        }
+        onClicked: Shell.sessionOpen = false
     }
 
-    Scanlines { anchors.fill: parent; strength: Settings.fx.scanlineOpacity * 1.5 }
+    /*
+     * No full-screen scanlines either.
+     *
+     * They were drawn across the whole surface, which worked while there was a
+     * scrim under them to sit on. With the scrim gone they would be the only
+     * thing painted over the live desktop - a grid of lines across your
+     * windows with no panel behind it to explain them. The menu card draws its
+     * own, which is where they belong.
+     */
 
     GlitchBox {
         category: "menus"

@@ -22,7 +22,8 @@ PaneScroll {
 
     readonly property var available: [
         "controlCenter", "quickSettings", "launcher", "workspaces", "activeWindow", "clock", "sysmon",
-        "tray", "volume", "network", "battery", "keyboardLayout", "session", "spacer"
+        "tray", "volume", "network", "notifications", "battery", "keyboardLayout",
+        "session", "spacer"
     ]
 
     readonly property var selectedEntry: {
@@ -109,25 +110,38 @@ PaneScroll {
 
         SettingRow {
             label: Settings.t("Position")
-            CyberButton {
-                text: Settings.bar.position === "top" ? "Top" : "Bottom"
-                onClicked: Settings.bar.position =
-                    Settings.bar.position === "top" ? "bottom" : "top"
+            /*
+             * A stepper, not a button.
+             *
+             * As a button it was the one control on the pane the keyboard
+             * could not work: CcNav steers a row by asking its control to
+             * step, and a button that flips a value on click has nothing to
+             * step - so arrowing onto Position and pressing left or right did
+             * nothing, with no sign that this row was different from the eight
+             * below it that all behave.
+             */
+            CyberSelector {
+                options: [{ v: "top", l: Settings.t("Top") },
+                          { v: "bottom", l: Settings.t("Bottom") }]
+                current: Settings.bar.position
+                onPicked: (v) => Settings.bar.position = v
             }
         }
 
         SettingRow {
             label: Settings.t("Style")
-            description: Settings.t("Attached sits flush against the screen edge; floating is a detached block")
+            description: Settings.t("Attached sits flush against the screen edge, detached is a block with its own frame, and floating drops the frame to leave only the widgets")
             CyberSelector {
-                options: [{ v: "attached", l: Settings.t("Attached") }, { v: "floating", l: Settings.t("Floating") }]
+                options: [{ v: "attached", l: Settings.t("Attached") },
+                          { v: "detached", l: Settings.t("Detached") },
+                          { v: "floating", l: Settings.t("Floating") }]
                 current: Settings.bar.style
                 onPicked: (v) => Settings.bar.style = v
             }
         }
 
         SettingRow {
-            visible: Settings.bar.style === "floating"
+            visible: Settings.bar.style !== "attached"
             label: Settings.t("Side margin")
             CyberSlider {
                 width: 240
@@ -139,7 +153,7 @@ PaneScroll {
         }
 
         SettingRow {
-            visible: Settings.bar.style === "floating"
+            visible: Settings.bar.style !== "attached"
             label: Settings.t("Edge margin")
             alternate: true
             CyberSlider {
@@ -152,7 +166,7 @@ PaneScroll {
         }
 
         SettingRow {
-            visible: Settings.bar.style === "floating"
+            visible: Settings.bar.style !== "attached"
             label: Settings.t("Block width")
             description: Settings.t("0 fills the space left by the side margins")
             CyberSlider {
@@ -165,7 +179,8 @@ PaneScroll {
         }
 
         SettingRow {
-            visible: Settings.bar.style === "floating"
+            // The frame's own chamfer - there is no frame to cut when floating.
+            visible: Settings.bar.style === "detached"
             label: Settings.t("Corner cut")
             alternate: true
             CyberSlider {
@@ -242,9 +257,12 @@ PaneScroll {
     PaneGroup {
         width: pane.innerWidth
         title: Settings.t("Widget outlines")
+        page: true
+        pageValue: Settings.bar.widgetBorders === "always" ? Settings.t("Always")
+            : (Settings.bar.widgetBorders === "never" ? Settings.t("Never")
+                                                      : Settings.t("On hover"))
         accentColor: Theme.accent
         glitch: false
-        expanded: false
 
 
         SettingRow {
@@ -578,12 +596,12 @@ PaneScroll {
     PaneGroup {
         width: pane.innerWidth
         title: Settings.t("Add a widget")
+        page: true
         subtitle: pane.selectedSection !== ""
         ? `Adds to the ${pane.selectedSection} section`
         : "Adds to the right section; select a widget first to choose another"
         accentColor: Theme.accent
         glitch: false
-        expanded: false
 
 
         Flow {

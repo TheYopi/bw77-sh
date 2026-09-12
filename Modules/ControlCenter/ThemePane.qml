@@ -156,6 +156,8 @@ PaneScroll {
                                 ? Theme.accent : Theme.alpha(Theme.text, 0.3)
                             notch: 5
 
+                            Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+
                             MouseArea {
                                 id: swatchMouse
                                 anchors.fill: parent
@@ -192,6 +194,9 @@ PaneScroll {
                             strokeColor: roleRow.overridden
                                 ? Theme.warn : Theme.alpha(Theme.border, 0.9)
                             notch: 5
+
+                            Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+                            Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
 
                             CyberText {
                                 anchors.centerIn: parent

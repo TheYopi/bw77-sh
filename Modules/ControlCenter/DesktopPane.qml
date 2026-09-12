@@ -9,7 +9,7 @@ PaneScroll {
     id: pane
 
     readonly property var types: ["sysmon", "cpu", "memory", "network", "gpu",
-                                 "visualizer", "media", "clock"]
+                                 "visualizer", "media", "clock", "battery"]
 
     function addWidget(type) {
         const list = Settings.desktop.widgets.slice();

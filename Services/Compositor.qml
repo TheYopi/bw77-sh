@@ -38,6 +38,9 @@ Singleton {
     property string keyboardLayout: backendLoader.item ? backendLoader.item.keyboardLayout : ""
     property var keyboardLayouts: backendLoader.item ? backendLoader.item.keyboardLayouts : []
 
+    // --- the compositor's overview, where the wallpaper backdrop is shown
+    property bool overviewOpen: backendLoader.item ? !!backendLoader.item.overviewOpen : false
+
     // --- focused window, protocol-level so it works everywhere
     readonly property Toplevel activeToplevel: ToplevelManager.activeToplevel
     readonly property string activeTitle: activeToplevel ? activeToplevel.title : ""

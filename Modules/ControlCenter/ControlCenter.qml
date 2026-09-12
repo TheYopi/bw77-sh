@@ -55,9 +55,20 @@ PanelWindow {
     /*
      * --- categories
      *
-     * Grouped, because sixteen flat entries is a list you read rather than a
-     * structure you navigate. The groups are how you would go looking: the
-     * surfaces first, then how they all look, then the machine underneath.
+     * Ordered and grouped the way GNOME's settings are, because that order is
+     * not arbitrary: what the machine is doing right now comes first (network,
+     * bluetooth, sound), then how it all looks, then the pieces of the shell
+     * itself, then the things you set once. Somebody who has used a desktop in
+     * the last decade already knows where to look.
+     *
+     * Separated by rules rather than by headings. The headings named groups
+     * that were mine rather than anybody else's - "Surfaces" is not a word a
+     * reader arrives with - and a rule says the same thing about a break in a
+     * list without asking for a vocabulary. It is also what the screenshot
+     * does.
+     *
+     * `icon` per entry, for the same reason: a list of twenty words is read
+     * linearly, a list of twenty icons is aimed at.
      *
      * `groups` is what [F1] restores. Most panes map to one settings group;
      * where a pane owns only part of one, it names the keys, because `general`
@@ -65,46 +76,54 @@ PanelWindow {
      * should not reach over and change the interface language.
      */
     readonly property var rail: [
-        { group: Settings.t("Overview") },
-        { id: "home",          label: Settings.t("Overview"),          source: "HomePane.qml",
-          groups: ["general:language"] },
+        // First, and on its own. It is the one entry that is not a category of
+        // settings but a look at the machine, and it is where the surface opens.
+        { id: "home",          label: Settings.t("Overview"),           icon: "\uf015",
+          source: "HomePane.qml", groups: ["general:language"] },
 
-        { group: Settings.t("Surfaces") },
-        { id: "bar",           label: Settings.t("Top bar"),           source: "BarPane.qml",
-          groups: ["bar", "clock"] },
-        { id: "dock",          label: Settings.t("Dock"),              source: "DockPane.qml",
-          groups: ["dock"] },
-        { id: "desktop",       label: Settings.t("Desktop"),           source: "DesktopPane.qml",
-          groups: ["desktop"] },
-        { id: "launcher",      label: Settings.t("Launcher"),          source: "LauncherPane.qml",
-          groups: ["launcher"] },
-        { id: "quickSettings", label: Settings.t("Quick settings"),    source: "QuickSettingsPane.qml",
-          groups: ["quickSettings"] },
-        { id: "notifications", label: Settings.t("Notifications"),     source: "NotificationPane.qml",
-          groups: ["notifications"] },
-        { id: "osd",           label: Settings.t("On-screen display"), source: "OsdPane.qml",
-          groups: ["osd"] },
+        { rule: true },
+        { id: "network",       label: Settings.t("Network & Internet"), icon: "\uf1eb",
+          source: "NetworkPane.qml", groups: [] },
+        { id: "bluetooth",     label: Settings.t("Bluetooth"),          icon: "\uf293",
+          source: "BluetoothPane.qml", groups: [] },
+        { id: "audio",         label: Settings.t("Sound"),              icon: "\uf028",
+          source: "AudioPane.qml", groups: ["audio"] },
 
-        { group: Settings.t("Appearance") },
-        { id: "theme",         label: Settings.t("Theme"),             source: "ThemePane.qml",
+        { rule: true },
+        { id: "theme",         label: Settings.t("Appearance"),         icon: "\uf53f",
+          source: "ThemePane.qml",
           groups: ["theme", "general:fontUI,fontIcons,fontSizeBase,textNudge,iconScale,scale"] },
-        { id: "wallpaper",     label: Settings.t("Wallpaper"),         source: "WallpaperPane.qml",
-          groups: ["wallpaper"] },
-        { id: "effects",       label: Settings.t("Effects"),           source: "EffectsPane.qml",
-          groups: ["fx", "decoration"] },
-        { id: "animations",    label: Settings.t("Animations"),        source: "AnimationsPane.qml",
-          groups: ["animations", "general:reducedMotion"] },
-        { id: "apps",          label: Settings.t("App theming"),       source: "AppThemePane.qml",
-          groups: ["appTheming"] },
+        { id: "wallpaper",     label: Settings.t("Wallpaper"),          icon: "\uf03e",
+          source: "WallpaperPane.qml", groups: ["wallpaper"] },
+        { id: "effects",       label: Settings.t("Effects"),            icon: "\uf0d0",
+          source: "EffectsPane.qml", groups: ["fx", "decoration"] },
+        { id: "animations",    label: Settings.t("Animations"),         icon: "\uf04b",
+          source: "AnimationsPane.qml", groups: ["animations", "general:reducedMotion"] },
+        { id: "notifications", label: Settings.t("Notifications"),      icon: "\uf0f3",
+          source: "NotificationPane.qml", groups: ["notifications"] },
+        { id: "launcher",      label: Settings.t("Search"),             icon: "\uf002",
+          source: "LauncherPane.qml", groups: ["launcher"] },
+        { id: "windows",       label: Settings.t("Multitasking"),       icon: "\uf2d2",
+          source: "WindowsPane.qml", groups: ["borders"] },
+        { id: "apps",          label: Settings.t("Applications"),       icon: "\uf009",
+          source: "AppThemePane.qml", groups: ["appTheming"] },
 
-        { group: Settings.t("System") },
-        { id: "windows",       label: Settings.t("Windows"),           source: "WindowsPane.qml",
-          groups: ["borders"] },
-        { id: "audio",         label: Settings.t("Audio"),             source: "AudioPane.qml",
-          groups: ["audio"] },
+        { rule: true },
+        { id: "bar",           label: Settings.t("Top bar"),            icon: "\uf0c9",
+          source: "BarPane.qml", groups: ["bar", "clock"] },
+        { id: "dock",          label: Settings.t("Dock"),               icon: "\uf0ca",
+          source: "DockPane.qml", groups: ["dock"] },
+        { id: "desktop",       label: Settings.t("Desktop"),            icon: "\uf108",
+          source: "DesktopPane.qml", groups: ["desktop"] },
+        { id: "quickSettings", label: Settings.t("Quick settings"),     icon: "\uf085",
+          source: "QuickSettingsPane.qml", groups: ["quickSettings"] },
+        { id: "osd",           label: Settings.t("On-screen display"),  icon: "\uf26c",
+          source: "OsdPane.qml", groups: ["osd"] },
+
+        { rule: true },
         // Nothing on this pane is a setting, so there is nothing to restore.
-        { id: "about",         label: Settings.t("About"),             source: "AboutPane.qml",
-          groups: [] }
+        { id: "about",         label: Settings.t("About"),              icon: "\uf05a",
+          source: "AboutPane.qml", groups: [] }
     ]
 
     // The selectable entries, in rail order. Q and E walk this rather than the
@@ -193,8 +212,8 @@ PanelWindow {
                 // Held for as long as the surface is open, so the four gauges
                 // are live on every tab. The Overview pane used to hold this on
                 // its own behalf, which is why they only ran on that tab.
-                Component.onCompleted: SysMon.acquire()
-                Component.onDestruction: SysMon.release()
+                Component.onCompleted: SysMon.acquireFast()
+                Component.onDestruction: SysMon.releaseFast()
 
                 readonly property int cellWidth:
                     Math.floor((width - Theme.space4 * 3) / 4)
@@ -280,21 +299,26 @@ PanelWindow {
                 /*
                  * Bring the selected entry into view after a Q or E.
                  *
-                 * Computed from the index rather than measured off the item,
-                 * because every row in the rail is the same height - including
-                 * the group headings, deliberately, so this arithmetic holds
-                 * and there is no need to reach into the Repeater for a
-                 * delegate that may not be built yet.
+                 * Summed rather than multiplied. It used to be index times a
+                 * fixed pitch, which held while every row in the rail was the
+                 * same height - the group headings were deliberately built to
+                 * that height so the arithmetic would work. The separators that
+                 * replaced them are 13px against an entry's 30, so the sum is
+                 * now over the rows above rather than a count of them. Still no
+                 * reaching into the Repeater for a delegate that may not exist
+                 * yet.
                  */
                 readonly property int rowPitch: 31
+                readonly property int rulePitch: 14
 
                 function revealTab() {
                     let idx = -1;
-                    for (let i = 0; i < root.rail.length; i++)
+                    let top = 0;
+                    for (let i = 0; i < root.rail.length; i++) {
                         if (root.rail[i].id === Shell.controlCenterTab) { idx = i; break; }
+                        top += root.rail[i].rule === true ? rulePitch : rowPitch;
+                    }
                     if (idx < 0 || contentHeight <= height) return;
-
-                    const top = idx * rowPitch;
                     const bottom = top + rowPitch;
                     const max = Math.max(0, contentHeight - height);
 
@@ -314,31 +338,44 @@ PanelWindow {
                             id: entry
                             required property var modelData
 
-                            readonly property bool isGroup: modelData.group !== undefined
+                            readonly property bool isGroup: modelData.rule === true
                             readonly property bool current:
                                 !isGroup && modelData.id === Shell.controlCenterTab
 
                             width: railColumn.width
-                            height: isGroup ? 30 : 30
+                            height: isGroup ? 13 : 30
 
-                            // Group heading. Not selectable, and set apart by
-                            // weight rather than by a rule, which would be a
-                            // fifth line in a list that is already lines.
-                            CyberText {
+                            // The break between blocks. Short of the full width
+                            // on both sides so it reads as a separator inside a
+                            // list rather than as the edge of something.
+                            Rectangle {
                                 visible: entry.isGroup
+                                anchors.verticalCenter: parent.verticalCenter
                                 anchors.left: parent.left
-                                anchors.bottom: parent.bottom
-                                anchors.bottomMargin: 4
-                                text: entry.modelData.group || ""
-                                role: "micro"
-                                color: Theme.alpha(Theme.textMuted, 0.8)
+                                anchors.leftMargin: Theme.space3
+                                anchors.right: parent.right
+                                anchors.rightMargin: Theme.space4
+                                height: 1
+                                color: Theme.alpha(Theme.border, 0.7)
                             }
 
+                            /*
+                             * Faded in and out, not switched on and off.
+                             *
+                             * `visible` was doing the work here, which meant the
+                             * highlight under the pointer appeared and vanished
+                             * on single frames as the cursor crossed the rail -
+                             * a strobe down a list of twenty entries. Opacity
+                             * carries the same states and can be animated;
+                             * `visible` still follows it so a fully faded
+                             * highlight costs no rendering.
+                             */
                             NotchRect {
                                 anchors.fill: parent
                                 anchors.rightMargin: Theme.space2
-                                visible: !entry.isGroup
-                                    && (entry.current || railMouse.containsMouse)
+                                opacity: !entry.isGroup
+                                    && (entry.current || railMouse.containsMouse) ? 1 : 0
+                                visible: opacity > 0.01
                                 fillColor: entry.current
                                     ? Theme.alpha(Theme.accent, 0.16)
                                     : Theme.alpha(Theme.accent, 0.07)
@@ -346,6 +383,10 @@ PanelWindow {
                                     ? Theme.accent : "transparent"
                                 strokeWidth: entry.current ? Theme.borderWidth : 0
                                 notch: 6
+
+                                Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+                                Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+                                Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
                             }
 
             /*
@@ -359,20 +400,43 @@ PanelWindow {
              * indicators rather than one selection.
              */
 
-                            GlitchText {
+                            // Fixed slot, centred glyph: the labels start at
+                            // one x for every entry, which is what makes the
+                            // column scannable. Same reasoning as QsTile.
+                            CyberText {
+                                id: railIcon
                                 visible: !entry.isGroup
                                 anchors.left: parent.left
                                 anchors.leftMargin: Theme.space3
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: Math.round(Theme.fontBase * 1.6)
+                                horizontalAlignment: Text.AlignHCenter
+                                text: entry.modelData.icon || ""
+                                role: "icon"
+                                sizeOverride: Theme.fontBase
+                                color: entry.current ? Theme.accent
+                                    : (railMouse.containsMouse ? Theme.text : Theme.textDim)
+
+                                Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                            }
+
+                            GlitchText {
+                                visible: !entry.isGroup
+                                anchors.left: railIcon.right
+                                anchors.leftMargin: Theme.space2
                                 anchors.right: parent.right
                                 anchors.rightMargin: Theme.space3
                                 anchors.verticalCenter: parent.verticalCenter
-                                textWidth: parent.width - Theme.space3 * 2
+                                textWidth: parent.width - railIcon.width
+                                    - Theme.space3 * 2 - Theme.space2
                                 text: entry.modelData.label || ""
                                 role: "label"
                                 elide: Text.ElideRight
                                 color: entry.current ? Theme.accent
                                     : (railMouse.containsMouse ? Theme.text : Theme.textDim)
                                 decodeTrigger: CcNav.revealNonce
+
+                                Behavior on color { ColorAnimation { duration: Theme.durFast } }
                             }
 
                             MouseArea {
@@ -417,8 +481,8 @@ PanelWindow {
 
                 anchors.left: railRule.right
                 anchors.leftMargin: Theme.space4
-                anchors.right: tips.left
-                anchors.rightMargin: Theme.space4
+                anchors.right: parent.right
+                anchors.rightMargin: Theme.space2
                 anchors.top: railView.top
                 anchors.bottom: railView.bottom
 
@@ -434,31 +498,41 @@ PanelWindow {
                     if (keys.usedKeyboard) CcNav.focusEdge(false);
                 }
 
-                // Ends by forcing opacity to 1: an interrupted fade would leave
-                // the pane invisible with no way back but reopening.
+                // The pane rises into place as it fades, the same short travel
+                // the card itself arrives on - so switching panes reads as the
+                // same kind of movement as opening the window, one step down.
+                transform: Translate { id: paneShift }
+
+                // Ends by forcing both back to rest: an interrupted fade would
+                // leave the pane invisible, or offset, with no way back but
+                // reopening.
                 SequentialAnimation {
                     id: swapIn
-                    NumberAnimation {
-                        target: paneHost; property: "opacity"
-                        from: 0; to: 1
-                        // Half the category, so the pane swap stays quicker
-                        // than the card's own entrance but still tracks it.
-                        duration: Math.max(1, Theme.durationFor("controlCenter") * 0.5)
-                        easing.type: Theme.curveFor("controlCenter")
-                    }
-                    ScriptAction { script: paneHost.opacity = 1 }
-                }
-            }
 
-            // --- descriptions
-            TipsPanel {
-                id: tips
-                anchors.right: parent.right
-                anchors.top: railView.top
-                anchors.bottom: railView.bottom
-                // Wide enough for a sentence to break twice at most, narrow
-                // enough that it never becomes the main column.
-                width: Math.max(220, Math.min(280, card.width * 0.24))
+                    ParallelAnimation {
+                        NumberAnimation {
+                            target: paneHost; property: "opacity"
+                            from: 0; to: 1
+                            // Half the category, so the pane swap stays quicker
+                            // than the card's own entrance but still tracks it.
+                            duration: Math.max(1, Theme.durationFor("controlCenter") * 0.5)
+                            easing.type: Theme.curveFor("controlCenter")
+                        }
+                        NumberAnimation {
+                            target: paneShift; property: "y"
+                            from: 10; to: 0
+                            duration: Theme.durationFor("controlCenter")
+                            easing.type: Theme.curveFor("controlCenter")
+                        }
+                    }
+
+                    ScriptAction {
+                        script: {
+                            paneHost.opacity = 1;
+                            paneShift.y = 0;
+                        }
+                    }
+                }
             }
 
             // --- footer
@@ -603,11 +677,13 @@ PanelWindow {
             Shell.closeColorPicker();
             Shell.closeFontPicker();
             CcNav.clearActive();
+            CcNav.clearTip();
         }
     }
 
     function selectTab(id) {
         if (id === Shell.controlCenterTab) return;
+        CcNav.clearTip();
         Shell.controlCenterTab = id;
         keys.resetArmed = false;
         railView.revealTab();
@@ -634,6 +710,88 @@ PanelWindow {
      * so no key ever changes meaning depending on where focus happens to be,
      * and there is no mode to be in the wrong one of.
      */
+    /*
+     * --- the dwell tooltip
+     *
+     * Outside the card, and last, so it is drawn over everything: a tip raised
+     * by the bottom row of a pane has to hang past the edge of a Flickable that
+     * clips, and past the card's own border under that.
+     *
+     * Positioned in window coordinates, which is what the row hands over: its
+     * own bottom-left corner, so the tip hangs off the row it describes rather
+     * than off the pointer - the only anchor the keyboard could have used, and
+     * the steadier one under the mouse. Clamped so a tip raised near an edge
+     * turns back on itself rather than running off the screen.
+     */
+    Item {
+        id: dwellTip
+
+        readonly property bool up: CcNav.tipRow !== null
+        readonly property real gap: Theme.space3
+
+        visible: opacity > 0.01
+        opacity: up ? 1 : 0
+
+        // Flush with the row's left edge, not offset from it: the two line up
+        // as one column, which is what makes the tip read as belonging to the
+        // row above it.
+        x: Math.max(Theme.space2,
+             Math.min(root.width - width - Theme.space2, CcNav.tipX))
+
+        // Above the row when there is no room below it, which for a tip this
+        // size only happens on the last row or two of a pane. `tipY` is already
+        // the row's bottom edge, so going above it has to clear the row's own
+        // height as well - a fixed lift rather than a measured one, since the
+        // rows this happens on are the standard 44.
+        y: CcNav.tipY + gap + height > root.height - Theme.space2
+            ? Math.max(Theme.space2, CcNav.tipY - 44 - gap - height)
+            : CcNav.tipY + gap
+
+        width: Math.min(360, tipText.implicitWidth + Theme.space3 * 2)
+        height: tipText.implicitHeight + Theme.space2 * 2
+
+        Behavior on opacity {
+            enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
+            NumberAnimation { duration: Theme.durFast }
+        }
+
+        NotchRect {
+            anchors.fill: parent
+            fillColor: Theme.alpha(Theme.bgDeep, 0.97)
+            strokeColor: Theme.alpha(Theme.accent, 0.5)
+            notch: Theme.notchSmall
+            notchTopLeft: false
+            notchTopRight: false
+            notchBottomRight: true
+            notchBottomLeft: false
+        }
+
+        CyberText {
+            id: tipText
+            anchors.left: parent.left
+            anchors.leftMargin: Theme.space3
+            anchors.right: parent.right
+            anchors.rightMargin: Theme.space3
+            anchors.verticalCenter: parent.verticalCenter
+
+            // Held after the tip is dismissed - clearing it with the row would
+            // collapse the box to nothing while it is still fading out.
+            property string held: ""
+            onTextChanged: if (text !== "") held = text
+
+            text: CcNav.tipText !== "" ? CcNav.tipText : held
+            role: "body"
+            caps: false
+            color: Theme.text
+            wrapMode: Text.Wrap
+            elide: Text.ElideNone
+            lineHeight: 1.2
+            // Two or three lines at this width, which is a description rather
+            // than a paragraph. Anything longer belongs on the row itself.
+            width: Math.min(360 - Theme.space3 * 2, implicitWidth)
+        }
+    }
+
     Item {
         id: keys
 
@@ -641,8 +799,7 @@ PanelWindow {
         focus: true
 
         // Set by the first navigation keystroke. Until then the surface stays
-        // out of the way of a mouse user - nothing is highlighted and the tip
-        // panel is empty.
+        // out of the way of a mouse user - nothing is highlighted.
         property bool usedKeyboard: false
 
         property bool resetArmed: false
@@ -697,11 +854,20 @@ PanelWindow {
 
             switch (event.key) {
             case Qt.Key_Escape:
-                // Escape backs out of the armed reset before it closes the
-                // surface, so cancelling does not also lose your place.
+                /*
+                 * Escape unwinds one step at a time rather than closing.
+                 *
+                 * An armed reset first, so cancelling it does not also lose
+                 * your place; then a sub-page, because backing out of one is
+                 * what Escape means everywhere else in this shell and closing
+                 * the whole window from inside a page you opened by accident
+                 * is a poor trade. Only then the surface.
+                 */
                 if (keys.resetArmed) {
                     keys.resetArmed = false;
                     disarm.stop();
+                } else if (paneHost.item && paneHost.item.openPage) {
+                    paneHost.item.popPage();
                 } else {
                     Shell.controlCenterOpen = false;
                 }

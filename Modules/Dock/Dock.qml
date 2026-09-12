@@ -33,6 +33,9 @@ import qs.Services
  */
 Variants {
     model: {
+        // Off means no windows at all, not hidden ones: a hidden window keeps
+        // its renderer and its whole item tree for as long as it exists.
+        if (!Settings.dock.enabled) return [];
         const wanted = Settings.dock.monitors;
         if (!wanted || wanted.length === 0) return Quickshell.screens;
         return Quickshell.screens.filter(s => wanted.indexOf(s.name) !== -1);
@@ -70,7 +73,7 @@ Variants {
             if (!Settings.bar.exclusive) return 0;      // the bar is not claiming the strip
             if (Settings.bar.position !== Settings.dock.position) return 0;
             return Settings.bar.height
-                 + (Settings.bar.style === "floating" ? Settings.bar.marginV * 2 : 0);
+                 + (Settings.bar.style !== "attached" ? Settings.bar.marginV * 2 : 0);
         }
 
         // Three different measurements, and conflating them is what made the
@@ -113,7 +116,6 @@ Variants {
         property bool revealed: !hides
 
         screen: modelData
-        visible: Settings.dock.enabled
         color: "transparent"
 
         WlrLayershell.layer: win.hides ? WlrLayer.Overlay : WlrLayer.Top

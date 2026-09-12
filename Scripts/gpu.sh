@@ -209,5 +209,8 @@ while :; do
     nvidia) sample_nvidia ;;
     intel)  sample_intel ;;
   esac
+  # Gone with the shell. Quickshell ignores SIGPIPE and its children inherit
+  # that, so a failed write alone does not end an orphaned copy - see netbt.sh.
+  kill -0 "$PPID" 2>/dev/null || exit 0
   sleep "$interval"
 done

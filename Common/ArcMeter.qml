@@ -52,7 +52,23 @@ Item {
     implicitWidth: 140
     implicitHeight: 140
 
-    onShownChanged: canvas.requestPaint()
+    /*
+     * What the canvas actually draws is a tick count, not a fraction.
+     *
+     * `shown` is eased, so it changes on every frame of the sweep - and
+     * repainting on it meant a full software repaint of the ring, plus a
+     * texture upload, at the display's refresh rate for as long as the ease
+     * ran. With samples arriving ten a second the ease never finishes, so four
+     * gauges in the Control Center repainted forever.
+     *
+     * The picture is identical for every value inside one tick's band, so the
+     * only change worth a repaint is the lit count crossing a boundary. A
+     * 32-segment gauge sweeping its whole range now paints 32 times instead of
+     * once per frame, and looks exactly the same doing it.
+     */
+    readonly property int lit: Math.round(shown * segments)
+    onLitChanged: canvas.requestPaint()
+
     onFillColorChanged: canvas.requestPaint()
     onEmptyColorChanged: canvas.requestPaint()
     onSegmentsChanged: canvas.requestPaint()
@@ -74,7 +90,7 @@ Item {
                 ? root.radius
                 : Math.min(width, height) / 2 - 2;
             const innerR = outer - root.thickness;
-            const lit = Math.round(root.shown * root.segments);
+            const lit = root.lit;
 
             for (let i = 0; i < root.segments; i++) {
                 /*

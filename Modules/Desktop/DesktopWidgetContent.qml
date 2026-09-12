@@ -22,6 +22,7 @@ Loader {
         case "visualizer": return visualizerC;
         case "media":      return mediaC;
         case "clock":      return clockC;
+        case "battery":    return batteryC;
         default:           return null;
         }
     }
@@ -36,4 +37,5 @@ Loader {
     Component { id: visualizerC; VisualizerPanel {} }
     Component { id: mediaC;      MediaPanel {} }
     Component { id: clockC;      ClockPanel {} }
+    Component { id: batteryC;    BatteryPanel {} }
 }

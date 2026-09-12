@@ -68,6 +68,29 @@ Singleton {
     }
 
     /*
+     * The profile as a colour, in the shell's own vocabulary.
+     *
+     * Green, amber, red is the reading everybody already has for a three-step
+     * scale that trades economy for output, so the profile can be shown by
+     * tinting the glyph rather than by lighting a whole tile. That matters
+     * because the tile's lit state is an on/off idea and this is not one:
+     * Balanced is neither on nor off, it is the middle of three, and the only
+     * way a lit tile could say so was by staying dark - which is also what it
+     * does when nothing is happening at all.
+     *
+     * Unknown reads as Balanced, for the same reason `glyph` does: a machine
+     * with no daemon reports Balanced and is telling the truth about what it is
+     * doing, so the middle of the scale is the honest default.
+     */
+    readonly property color tone: {
+        switch (root.profile) {
+        case PowerProfile.PowerSaver:  return Theme.success;
+        case PowerProfile.Performance: return Theme.danger;
+        default:                       return Theme.warn;
+        }
+    }
+
+    /*
      * True for anything that is not the default.
      *
      * Drives the tile's lit state. Balanced is the daemon's default and the

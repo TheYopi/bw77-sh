@@ -63,6 +63,32 @@ PanelWindow {
         anchors.fill: parent
         shown: Shell.quickSettingsOpen
 
+        /*
+         * --- how the panel arrives
+         *
+         * It used to grow: with no direction of its own it fell through to the
+         * scale that GlitchBox does by default, and on a sheet that is the full
+         * height of the screen a scale reads as the panel stretching from a
+         * small box up to full height. Nothing about it said "a drawer came in
+         * from the edge", which is what it is.
+         *
+         * "auto" now resolves to the edge the panel is actually docked to, so
+         * a right-hand panel slides in from the right and a left-hand one from
+         * the left. Setting Direction explicitly under Animations still wins -
+         * ask for a fade or a glitch and that is what you get.
+         *
+         * `travel` is the sheet's own width rather than GlitchBox's 18px
+         * default. That default is tuned for a menu appearing near the pointer,
+         * where a small nudge is the whole effect; a panel docked to the screen
+         * edge has to come from off-screen or it looks like it twitched.
+         */
+        // GlitchBox names a direction by where the surface STARTS, not by the
+        // way it travels: "right" begins right of its resting place and moves
+        // left, which is a drawer entering from the right edge. So the panel
+        // names the edge it is docked to.
+        autoDirection: root.onRight ? "right" : "left"
+        travel: sheet.width
+
         Item {
             id: sheet
             width: Math.min(Settings.quickSettings.width, root.width - Theme.space4)

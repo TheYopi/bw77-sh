@@ -47,6 +47,24 @@ Scope {
         sourceComponent: root.component
     }
 
+    /*
+     * Collect once the surface is gone.
+     *
+     * Everything a closed surface built - the emoji list, the Control Center's
+     * panes, the launcher's entries - is garbage the moment the Loader lets go,
+     * but the JS engine only collects when something new is allocated. On an
+     * idle desktop that can be never, so the shell sat at its high-water mark
+     * after every close. A couple of seconds later, once the window and its
+     * items have actually been deleted, is when collecting finds all of it.
+     */
+    onActiveChanged: if (!active) collect.restart()
+
+    Timer {
+        id: collect
+        interval: 2000
+        onTriggered: gc()
+    }
+
     Timer {
         id: hold
         interval: root.closeDuration

@@ -34,6 +34,26 @@ Item {
     property int closeDuration: Math.round(Theme.durationFor(root.category) * 0.85)
     property bool enabled: Settings.animations.surfaceOpen
 
+    /*
+     * --- arriving and leaving are separately deniable
+     *
+     * A surface that is rebuilt while it is already on screen must not replay
+     * its arrival: a notification toast is destroyed and recreated every time
+     * one of its neighbours is added or removed, and replaying the entry each
+     * time made a stack of toasts flicker as a whole whenever any one of them
+     * changed. So the toast turns its entry off after the first appearance.
+     *
+     * That is an argument about the ENTRY, and it used to be made by switching
+     * `enabled` - which also turned off the exit, on a surface that has one for
+     * a reason. Every toast past its first frame therefore vanished instantly
+     * instead of tearing out, which is most of them.
+     *
+     * Two gates, both defaulting to the one flag, so a caller that only wants
+     * to deny one of them can say so.
+     */
+    property bool openEnabled: root.enabled
+    property bool closeEnabled: root.enabled
+
     readonly property int curve: Theme.curveFor(root.category)
 
     readonly property string direction: {
@@ -111,8 +131,12 @@ Item {
     }
 
     onShownChanged: {
-        if (!enabled || Theme.reducedMotion) {
+        const animate = shown ? root.openEnabled : root.closeEnabled;
+        if (!animate || Theme.reducedMotion) {
             opacity = shown ? 1 : 0;
+            // Still emitted, and still the only thing that ends the hold on the
+            // surface. A caller that has turned the exit off wants it gone at
+            // once, not left on screen for want of a signal.
             if (!shown) root.closeFinished();
             return;
         }
@@ -121,7 +145,7 @@ Item {
     }
 
     Component.onCompleted: {
-        if (shown && enabled && !Theme.reducedMotion) openSeq.restart();
+        if (shown && root.openEnabled && !Theme.reducedMotion) openSeq.restart();
         else opacity = shown ? 1 : 0;
     }
 

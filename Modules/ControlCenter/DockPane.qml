@@ -179,9 +179,12 @@ PaneScroll {
     PaneGroup {
         width: pane.innerWidth
         title: Settings.t("Hiding")
+        page: true
+        pageValue: Settings.dock.hideMode === "none" ? Settings.t("Always visible")
+            : (Settings.dock.hideMode === "intelligent" ? Settings.t("Intelligent")
+                                                        : Settings.t("Auto hide"))
         accentColor: Theme.accent
         glitch: false
-        expanded: false
 
 
         SettingRow {
@@ -226,9 +229,9 @@ PaneScroll {
     PaneGroup {
         width: pane.innerWidth
         title: Settings.t("Behaviour")
+        page: true
         accentColor: Theme.accent
         glitch: false
-        expanded: false
 
 
         SettingRow {
@@ -327,9 +330,9 @@ PaneScroll {
     PaneGroup {
         width: pane.innerWidth
         title: Settings.t("Icons and indicators")
+        page: true
         accentColor: Theme.accent
         glitch: false
-        expanded: false
 
 
         SettingRow {
@@ -518,9 +521,9 @@ PaneScroll {
     PaneGroup {
         width: pane.innerWidth
         title: Settings.t("Add an application")
+        page: true
         accentColor: Theme.accent
         glitch: false
-        expanded: false
 
 
         // Anything running but not pinned, offered as a one-click add.

@@ -158,9 +158,9 @@ PaneScroll {
     PaneGroup {
         width: pane.innerWidth
         title: Settings.t("Notification history")
+        page: true
         accentColor: Theme.accent
         glitch: false
-        expanded: false
 
 
         SettingRow {
@@ -200,10 +200,10 @@ PaneScroll {
     PaneGroup {
         width: pane.innerWidth
         title: Settings.t("Sliders")
+        page: true
         subtitle: Settings.t("Hide individual controls without turning off a whole section")
         accentColor: Theme.accent
         glitch: false
-        expanded: false
 
 
         Repeater {
@@ -284,10 +284,10 @@ PaneScroll {
     PaneGroup {
         width: pane.innerWidth
         title: Settings.t("Sections")
+        page: true
         subtitle: Settings.t("Order here is the order on the panel")
         accentColor: Theme.accent
         glitch: false
-        expanded: false
 
 
         Repeater {

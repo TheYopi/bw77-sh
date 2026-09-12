@@ -21,19 +21,35 @@ Item {
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"]
 
+    /*
+     * Which way the month last moved, for the grid to travel with.
+     *
+     * A month change rebuilds every cell in the grid at once, so without this
+     * the only difference between going forward and going back is the numbers
+     * that happen to be printed afterwards. Carrying the direction into the
+     * animation is what makes the two feel like opposite movements rather than
+     * one flicker.
+     */
+    property int lastShift: 0
+
     function shift(delta) {
         let m = viewMonth + delta;
         let y = viewYear;
         while (m < 0)  { m += 12; y -= 1; }
         while (m > 11) { m -= 12; y += 1; }
+        root.lastShift = delta;
         viewMonth = m;
         viewYear = y;
     }
 
     function reset() {
+        // Jumping home is not a step in either direction, so it fades in place.
+        root.lastShift = 0;
         viewYear = today.getFullYear();
         viewMonth = today.getMonth();
     }
+
+    onViewMonthChanged: if (!Theme.reducedMotion) monthSwap.restart();
 
     // Monday-first grid. getDay() is Sunday-first, so rotate it.
     readonly property int firstWeekday: {
@@ -69,6 +85,8 @@ Item {
                 text: "\u25C1"
                 role: "icon"
                 color: prevMouse.containsMouse ? Theme.accent : Theme.textDim
+
+                Behavior on color { ColorAnimation { duration: Theme.durFast } }
                 MouseArea {
                     id: prevMouse
                     anchors.fill: parent
@@ -102,6 +120,8 @@ Item {
                 text: "\u25B7"
                 role: "icon"
                 color: nextMouse.containsMouse ? Theme.accent : Theme.textDim
+
+                Behavior on color { ColorAnimation { duration: Theme.durFast } }
                 MouseArea {
                     id: nextMouse
                     anchors.fill: parent
@@ -114,9 +134,46 @@ Item {
         }
 
         Grid {
+            id: grid
             width: parent.width
             columns: 7
             spacing: 2
+
+            /*
+             * The new month arrives from the side the old one left towards.
+             *
+             * Ends by forcing both properties back to rest, for the same reason
+             * the Control Center's pane swap does: an animation interrupted by
+             * a fast second click would otherwise leave the grid parked
+             * half-transparent and off-centre with nothing to put it back.
+             */
+            transform: Translate { id: gridShift }
+
+            SequentialAnimation {
+                id: monthSwap
+
+                ParallelAnimation {
+                    NumberAnimation {
+                        target: grid; property: "opacity"
+                        from: 0; to: 1
+                        duration: Theme.durationFor("menus")
+                        easing.type: Theme.curveFor("menus")
+                    }
+                    NumberAnimation {
+                        target: gridShift; property: "x"
+                        from: root.lastShift * 14; to: 0
+                        duration: Theme.durationFor("menus")
+                        easing.type: Theme.curveFor("menus")
+                    }
+                }
+
+                ScriptAction {
+                    script: {
+                        grid.opacity = 1;
+                        gridShift.x = 0;
+                    }
+                }
+            }
 
             Repeater {
                 model: ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]

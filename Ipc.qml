@@ -33,7 +33,7 @@ Scope {
          * "is the shell running the files I just copied in" is one command
          * rather than an argument.
          */
-        function build(): string { return "r40 2026-09-03"; }
+        function build(): string { return "r43 2026-09-03"; }
 
         // Switch language without opening the Control Center.
         function language(code: string): void {
@@ -124,6 +124,45 @@ Scope {
         function volumeUp(): void { Audio.setVolume(Audio.volume + 0.02); }
         function volumeDown(): void { Audio.setVolume(Audio.volume - 0.02); }
         function setVolume(percent: int): void { Audio.setVolume(percent / 100); }
+    }
+
+    /*
+     * Called by the compositor's key bindings AFTER they have done the work,
+     * so the keys keep working with the shell down and this only adds the
+     * overlay. In niri:
+     *
+     *   XF86AudioNext { spawn-sh "playerctl next; qs -c bw77-shell ipc call osd media next"; }
+     *   XF86MonBrightnessUp { spawn-sh "brightnessctl set +10%; qs -c bw77-shell ipc call osd brightness up"; }
+     *
+     * media: play | stop | previous | next      brightness: up | down
+     */
+    IpcHandler {
+        target: "osd"
+
+        function media(action: string): void { Shell.osd("media", action); }
+
+        function brightness(direction: string): void {
+            // The key already changed it; re-read so the meter shows the new
+            // level rather than the one from the last poll.
+            Brightness.refresh();
+            Shell.osd("brightness", direction);
+        }
+    }
+
+    /*
+     * The emoji picker.
+     *
+     *   qs -c bw77-shell ipc call emoji toggle
+     *
+     * Enter copies the emoji with wl-copy and types it into the window that
+     * had focus before the picker opened; see EmojiPicker.qml.
+     */
+    IpcHandler {
+        target: "emoji"
+
+        function toggle(): void { Shell.toggleEmoji(); }
+        function open(): void { Shell.closeAll(); Shell.emojiOpen = true; }
+        function close(): void { Shell.emojiOpen = false; }
     }
 
     IpcHandler {

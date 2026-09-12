@@ -6,6 +6,8 @@ QtObject {
     property int focusedWorkspaceId: -1
     property string keyboardLayout: ""
     property var keyboardLayouts: []
+    // No overview to report; see NiriBackend.
+    property bool overviewOpen: false
 
     function focusWorkspace(ws) {}
     function cycleKeyboardLayout() {}

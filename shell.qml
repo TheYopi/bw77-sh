@@ -67,6 +67,12 @@ ShellRoot {
     }
 
     SurfaceHolder {
+        open: Shell.emojiOpen
+        category: "launcher"
+        component: Component { EmojiPicker {} }
+    }
+
+    SurfaceHolder {
         open: Shell.sessionOpen
         category: "menus"
         component: Component { SessionMenu {} }

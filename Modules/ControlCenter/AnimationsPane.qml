@@ -108,6 +108,8 @@ PaneScroll {
               hint: "The application launcher" },
             { key: "menus",         label: Settings.t("Menus"),
               hint: "Session menu, polkit prompt, colour picker, wallpaper picker" },
+            { key: "tooltip",       label: Settings.t("Tooltips"),
+              hint: "The label that appears beside a dock icon under the pointer" },
             { key: "wallpaper",     label: Settings.t("Wallpaper"),
               hint: "The swap when the wallpaper changes" },
             { key: "theme",         label: Settings.t("Theme"),

@@ -45,14 +45,33 @@ QsSection {
                 visible: root.tileEnabled("network")
                 width: visible ? root.colWidth : 0
                 glyph: SysState.netIcon
-                label: SysState.netConnected ? SysState.netLabel : "Network"
-                detail: SysState.netConnected
-                    ? (SysState.netType === "wifi"
-                        ? SysState.netStrength + "%" : "Wired")
-                    : "Offline"
+
+                /*
+                 * Title is what the tile is, detail is what it is doing.
+                 *
+                 * The two used to swap places: connected, the title became the
+                 * SSID and the detail became a percentage; disconnected, the
+                 * title became the word "Network". So the one label that said
+                 * which tile this was disappeared exactly when the tile changed
+                 * state, and a long SSID elided it away the rest of the time.
+                 * GNOME keeps "Wi-Fi" in the title and the network underneath,
+                 * and it is the arrangement that survives a column being read
+                 * downwards. The signal is already in the glyph, which draws
+                 * its own bars.
+                 */
+                label: SysState.netKind
+                detail: SysState.netLabel
                 on: SysState.netConnected
                 tint: root.accentColor
-                expandable: true
+
+                // Neutral like the tiles that happen to be switched off: this
+                // one is connected almost all of the time, and a permanently
+                // lit slab is not a state, it is the background. See
+                // QsTile.frameEmphasis.
+                frameEmphasis: false
+
+                // Nothing to list without a radio, so no chevron to open it.
+                expandable: SysState.wifiPresent
                 expanded: root.openMenu === "network"
 
                 // Tapping the tile toggles the radio; the chevron lists networks.
@@ -68,7 +87,12 @@ QsSection {
                 detail: SysState.btLabel
                 on: SysState.btPowered
                 tint: root.accentColor
-                expandable: true
+
+                // As the network tile: the frame stays neutral and the glyph
+                // carries the state.
+                frameEmphasis: false
+
+                expandable: SysState.btAvailable
                 expanded: root.openMenu === "bluetooth"
 
                 onActivated: SysState.toggleBluetooth()
@@ -87,17 +111,21 @@ QsSection {
         // --- network submenu
         QsSubmenu {
             width: parent.width
-            visible: root.openMenu === "network"
+            expanded: root.openMenu === "network"
             tint: root.accentColor
             rowCount: SysState.accessPoints.length
-            emptyText: SysState.netType === "ethernet"
-                ? "Wired connection active"
-                : (SysState.wifiEnabled ? Settings.t("No networks found") : Settings.t("Wi-Fi is off"))
+            emptyText: !SysState.wifiPresent
+                ? Settings.t("No Wi-Fi adapter")
+                : (SysState.netType === "ethernet"
+                    ? Settings.t("Wired connection active")
+                    : (SysState.wifiEnabled ? Settings.t("No networks found")
+                                            : Settings.t("Wi-Fi is off")))
 
             QsSubmenuHeader {
                 label: "Wi-Fi"
                 tint: root.accentColor
                 checked: SysState.wifiEnabled
+                toggleEnabled: SysState.wifiPresent
                 scanning: SysState.wifiScanning
                 onToggled: SysState.toggleWifi()
                 onScanRequested: SysState.rescanWifi()
@@ -226,6 +254,8 @@ QsSection {
                     role: "micro"
                     caps: false
                     color: settingsMouse.containsMouse ? root.accentColor : Theme.textMuted
+
+                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
                 }
 
                 MouseArea {
@@ -241,13 +271,14 @@ QsSection {
         // --- bluetooth submenu
         QsSubmenu {
             width: parent.width
-            visible: root.openMenu === "bluetooth"
+            expanded: root.openMenu === "bluetooth"
             tint: root.accentColor
             visibleRows: 6
             rowCount: SysState.btDevices.length
             emptyText: SysState.btAvailable
-                ? (SysState.btPowered ? Settings.t("Press SCAN to find devices") : Settings.t("Bluetooth is off"))
-                : "No adapter found"
+                ? (SysState.btPowered ? Settings.t("Press SCAN to find devices")
+                                      : Settings.t("Bluetooth is off"))
+                : Settings.t("No Bluetooth adapter")
 
             QsSubmenuHeader {
                 label: Settings.t("Bluetooth")
@@ -392,6 +423,8 @@ QsSection {
                     role: "micro"
                     caps: false
                     color: btSettingsMouse.containsMouse ? root.accentColor : Theme.textMuted
+
+                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
                 }
 
                 MouseArea {
@@ -425,6 +458,13 @@ QsSection {
             detail: Power.label + (Power.held ? " \u00B7 " + Settings.t("held") : "")
             on: Power.active
             tint: root.accentColor
+
+            // Green for Power saver, amber for Balanced, red for Performance,
+            // on the glyph alone - see Power.tone and QsTile.frameEmphasis for
+            // why this tile does not light its frame like the switches do.
+            frameEmphasis: false
+            glyphColor: Power.tone
+
             expandable: true
             expanded: root.openMenu === "power"
 
@@ -438,7 +478,7 @@ QsSection {
         // --- power profile submenu
         QsSubmenu {
             width: parent.width
-            visible: root.openMenu === "power"
+            expanded: root.openMenu === "power"
             tint: root.accentColor
             visibleRows: 4
             rowCount: Power.profiles.length

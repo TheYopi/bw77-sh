@@ -138,6 +138,8 @@ Item {
                     anchors.fill: parent
                     color: winMouse.containsMouse
                         ? Theme.alpha(Theme.accent, 0.18) : "transparent"
+
+                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
                 }
 
                 Row {
@@ -166,6 +168,8 @@ Item {
                         caps: false
                         color: winMouse.containsMouse ? Theme.accent : Theme.text
                         elide: Text.ElideRight
+
+                        Behavior on color { ColorAnimation { duration: Theme.durFast } }
                     }
                 }
 
@@ -209,17 +213,16 @@ Item {
             color: Theme.alpha(Theme.border, 0.9)
         }
 
-        // --- what the application itself offers
-        CyberText {
-            visible: root.shownActions.length > 0
-            width: parent.width
-            text: Settings.t("From the application")
-            role: "micro"
-            color: Theme.textMuted
-            topPadding: 3
-            bottomPadding: 1
-        }
-
+        /*
+         * --- what the application itself offers, then what the shell does
+         *
+         * One run of rows, with no heading over the first group and no rule
+         * between the two. They used to be labelled "From the application" and
+         * divided, which cost two lines of a menu that is often only four rows
+         * tall - and named a distinction the rows already carry: the entry's
+         * own actions are marked with a chevron, the shell's with the glyph for
+         * what they do.
+         */
         Repeater {
             model: root.shownActions
 
@@ -233,6 +236,8 @@ Item {
                     anchors.fill: parent
                     color: actMouse.containsMouse
                         ? Theme.alpha(Theme.accent, 0.18) : "transparent"
+
+                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
                 }
 
                 Row {
@@ -259,6 +264,8 @@ Item {
                         caps: false
                         color: actMouse.containsMouse ? Theme.accent : Theme.text
                         elide: Text.ElideRight
+
+                        Behavior on color { ColorAnimation { duration: Theme.durFast } }
                     }
                 }
 
@@ -279,14 +286,7 @@ Item {
             }
         }
 
-        Rectangle {
-            visible: root.shownActions.length > 0
-            width: parent.width
-            height: 1
-            color: Theme.alpha(Theme.border, 0.9)
-        }
-
-        // --- actions
+        // --- the shell's own actions, continuing the run above
         Repeater {
             model: [
                 { label: Settings.t("Open new window"), glyph: "\uf0fe",
@@ -319,6 +319,8 @@ Item {
                     color: actionMouse.containsMouse
                         ? Theme.alpha(modelData.danger ? Theme.danger : Theme.accent, 0.18)
                         : "transparent"
+
+                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
                 }
 
                 Row {

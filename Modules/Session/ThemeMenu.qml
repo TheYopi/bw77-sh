@@ -110,13 +110,22 @@ PanelWindow {
         }
     }
 
-    Rectangle {
+    /*
+     * A click target, not a scrim.
+     *
+     * The surface still covers the screen so that clicking anywhere outside
+     * dismisses, but it paints nothing - what is behind stays as bright as it
+     * was. The card is opaque and bordered and does not need the desktop
+     * knocked back to be legible, which is all the dimming was for.
+     *
+     * The full-screen scanlines went with it: they need something to sit on,
+     * and without the scrim they would be the only thing drawn over the live
+     * desktop. The card draws its own through Panel.
+     */
+    MouseArea {
         anchors.fill: parent
-        color: Theme.alpha(Theme.bgDeep, 0.88)
-        MouseArea { anchors.fill: parent; onClicked: Shell.themeMenuOpen = false }
+        onClicked: Shell.themeMenuOpen = false
     }
-
-    Scanlines { anchors.fill: parent; strength: Settings.fx.scanlineOpacity * 1.5 }
 
     GlitchBox {
         category: "theme"

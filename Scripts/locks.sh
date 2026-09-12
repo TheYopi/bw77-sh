@@ -115,18 +115,24 @@ rescan
 last=""
 ticks=0
 
+# Quickshell ignores SIGPIPE and children inherit that, so a write to a shell
+# that has gone fails instead of killing this - and this writes only when a
+# LED changes, so an orphaned copy may never write at all. It has to notice
+# its parent is gone by asking. `kill -0` is a builtin: a syscall, no fork.
 while :; do
+  kill -0 "$PPID" 2>/dev/null || exit 0
+
   if [ ${#caps_files[@]} -eq 0 ] \
      && [ ${#num_files[@]} -eq 0 ] \
      && [ ${#scroll_files[@]} -eq 0 ]; then
     if [ "$last" != "none" ]; then
-      printf 'none\n'
+      printf 'none\n' || exit 0
       last="none"
     fi
   else
     read_locks
     if [ "$CUR" != "$last" ]; then
-      printf '%s\n' "$CUR"
+      printf '%s\n' "$CUR" || exit 0
       last="$CUR"
     fi
   fi

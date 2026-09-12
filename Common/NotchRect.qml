@@ -64,21 +64,34 @@ Item {
             readonly property real b: root.height - root.strokeWidth / 2
             readonly property real n: root.notch
 
-            startX: outer.l + (root.notchTopLeft ? outer.n : 0)
-            startY: outer.t
-
-            PathLine { x: outer.r - (root.notchTopRight ? outer.n : 0); y: outer.t }
-            PathLine { x: outer.r; y: outer.t + (root.notchTopRight ? outer.n : 0) }
-            PathLine { x: outer.r; y: outer.b - (root.notchBottomRight ? outer.n : 0) }
-            PathLine { x: outer.r - (root.notchBottomRight ? outer.n : 0); y: outer.b }
-            PathLine { x: outer.l + (root.notchBottomLeft ? outer.n : 0); y: outer.b }
-            PathLine { x: outer.l; y: outer.b - (root.notchBottomLeft ? outer.n : 0) }
-            PathLine { x: outer.l; y: outer.t + (root.notchTopLeft ? outer.n : 0) }
-            PathLine { x: outer.l + (root.notchTopLeft ? outer.n : 0); y: outer.t }
+            /*
+             * One polyline rather than eight PathLines.
+             *
+             * The same nine points in the same order, so the outline is the
+             * same outline - but eight PathLine objects were eight QObjects
+             * with two bindings each, per path, per NotchRect, and this shape
+             * is the frame of nearly everything the shell draws. The Control
+             * Center alone builds hundreds of them. One element with one
+             * binding does the same job.
+             */
+            PathPolyline {
+                path: [
+                    Qt.point(outer.l + (root.notchTopLeft ? outer.n : 0), outer.t),
+                    Qt.point(outer.r - (root.notchTopRight ? outer.n : 0), outer.t),
+                    Qt.point(outer.r, outer.t + (root.notchTopRight ? outer.n : 0)),
+                    Qt.point(outer.r, outer.b - (root.notchBottomRight ? outer.n : 0)),
+                    Qt.point(outer.r - (root.notchBottomRight ? outer.n : 0), outer.b),
+                    Qt.point(outer.l + (root.notchBottomLeft ? outer.n : 0), outer.b),
+                    Qt.point(outer.l, outer.b - (root.notchBottomLeft ? outer.n : 0)),
+                    Qt.point(outer.l, outer.t + (root.notchTopLeft ? outer.n : 0)),
+                    Qt.point(outer.l + (root.notchTopLeft ? outer.n : 0), outer.t)
+                ]
+            }
         }
 
-        // --- inner outline: stroke only, offset inward. Transparent and zero
-        // width when doubleStroke is off, so the path costs nothing to keep.
+        // --- inner outline: stroke only, offset inward. Empty when
+        // doubleStroke is off, which is almost everywhere, so it builds no
+        // geometry and its points are never computed.
         ShapePath {
             id: inner
             fillColor: "transparent"
@@ -94,17 +107,19 @@ Item {
             readonly property real b: root.height - inner.pad
             readonly property real n: Math.max(1, root.notch - root.innerStrokeInset)
 
-            startX: inner.l + (root.notchTopLeft ? inner.n : 0)
-            startY: inner.t
-
-            PathLine { x: inner.r - (root.notchTopRight ? inner.n : 0); y: inner.t }
-            PathLine { x: inner.r; y: inner.t + (root.notchTopRight ? inner.n : 0) }
-            PathLine { x: inner.r; y: inner.b - (root.notchBottomRight ? inner.n : 0) }
-            PathLine { x: inner.r - (root.notchBottomRight ? inner.n : 0); y: inner.b }
-            PathLine { x: inner.l + (root.notchBottomLeft ? inner.n : 0); y: inner.b }
-            PathLine { x: inner.l; y: inner.b - (root.notchBottomLeft ? inner.n : 0) }
-            PathLine { x: inner.l; y: inner.t + (root.notchTopLeft ? inner.n : 0) }
-            PathLine { x: inner.l + (root.notchTopLeft ? inner.n : 0); y: inner.t }
+            PathPolyline {
+                path: !root.doubleStroke ? [] : [
+                    Qt.point(inner.l + (root.notchTopLeft ? inner.n : 0), inner.t),
+                    Qt.point(inner.r - (root.notchTopRight ? inner.n : 0), inner.t),
+                    Qt.point(inner.r, inner.t + (root.notchTopRight ? inner.n : 0)),
+                    Qt.point(inner.r, inner.b - (root.notchBottomRight ? inner.n : 0)),
+                    Qt.point(inner.r - (root.notchBottomRight ? inner.n : 0), inner.b),
+                    Qt.point(inner.l + (root.notchBottomLeft ? inner.n : 0), inner.b),
+                    Qt.point(inner.l, inner.b - (root.notchBottomLeft ? inner.n : 0)),
+                    Qt.point(inner.l, inner.t + (root.notchTopLeft ? inner.n : 0)),
+                    Qt.point(inner.l + (root.notchTopLeft ? inner.n : 0), inner.t)
+                ]
+            }
         }
     }
 }

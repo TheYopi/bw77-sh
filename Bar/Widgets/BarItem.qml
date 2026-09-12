@@ -66,6 +66,20 @@ Item {
     function cfgColor(fallback) {
         return cfgColorRole !== "" ? Theme.c(cfgColorRole) : fallback;
     }
+
+    /*
+     * The frame's colour, separately from the text's.
+     *
+     * The outline and its fill used to take the widget's own accentColor with
+     * no way to change it, while the text beside them could be recoloured - so
+     * a clock set to gold sat in a cyan frame. Default still follows the
+     * widget, which matters: several widgets change their accent with their
+     * state (a muted volume turns crimson, an empty notification bell goes
+     * dim), and an unset frame keeps saying so.
+     */
+    readonly property string cfgFrameRole: (config && config.frameRole) ? config.frameRole : ""
+    readonly property color frameColor:
+        cfgFrameRole !== "" ? Theme.c(cfgFrameRole) : root.accentColor
     property string tooltip: ""
 
     signal clicked(var mouse)
@@ -95,8 +109,17 @@ Item {
             return own === "inherit" ? Settings.bar.widgetBorders : own;
         }
         readonly property bool lit: root.hovered || root.active
+        /*
+         * The outline follows the border mode, not whether the widget can be
+         * clicked.
+         *
+         * This used to return 0 for anything non-interactive, which is one
+         * widget - the active window readout - and meant it alone never drew a
+         * frame however the setting was left, including a per-widget
+         * borderMode of "always" set on that widget explicitly.
+         */
         readonly property real strength: {
-            if (!root.interactive || mode === "never") return 0;
+            if (mode === "never") return 0;
             if (lit) return 1.0;
             return mode === "always" ? Settings.bar.widgetBorderOpacity : 0;
         }
@@ -109,8 +132,8 @@ Item {
             NumberAnimation { duration: Theme.durFast }
         }
 
-        fillColor: Theme.alpha(root.accentColor, root.active ? 0.22 : 0.12)
-        strokeColor: Theme.alpha(root.accentColor, root.active ? 0.9 : 0.5)
+        fillColor: Theme.alpha(root.frameColor, root.active ? 0.22 : 0.12)
+        strokeColor: Theme.alpha(root.frameColor, root.active ? 0.9 : 0.5)
         notch: Theme.notchSmall
         // Bar widgets take both cuts, matching the bar they sit in.
         notchTopLeft: true
@@ -134,12 +157,22 @@ Item {
         id: mouse
         anchors.fill: parent
         hoverEnabled: true
-        enabled: root.interactive
-        acceptedButtons: root.captureClicks
+        /*
+         * Left enabled even when the widget is not interactive, so that hover
+         * still registers and a "hover" border lights under the cursor. What a
+         * non-interactive widget gives up is buttons, not the pointer: with
+         * none accepted, a click travels through to the bar behind - which is
+         * what opens quick settings on a right-click.
+         */
+        acceptedButtons: (root.interactive && root.captureClicks)
             ? (Qt.LeftButton | Qt.RightButton | Qt.MiddleButton)
             : Qt.NoButton
         cursorShape: root.interactive ? Qt.PointingHandCursor : Qt.ArrowCursor
-        onClicked: (m) => root.clicked(m)
-        onWheel: (w) => root.wheel(w.angleDelta.y)
+        onClicked: (m) => { if (root.interactive) root.clicked(m); }
+        onWheel: (w) => {
+            // Not ours to consume; let it reach whatever is underneath.
+            if (!root.interactive) { w.accepted = false; return; }
+            root.wheel(w.angleDelta.y);
+        }
     }
 }

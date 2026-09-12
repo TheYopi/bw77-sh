@@ -72,6 +72,33 @@ Text {
     renderType: Text.NativeRendering
     elide: Text.ElideRight
 
+    /*
+     * --- plain text, always
+     *
+     * Qt's default is AutoText, which sniffs every string and switches to the
+     * rich text engine the moment one looks like markup. Two things then go
+     * wrong at once, and both of them bite hardest on the strings the shell
+     * does not write itself.
+     *
+     * `elide` is documented as not working with rich text, and it silently does
+     * nothing rather than warning - so a Text with a width, a wrapMode and a
+     * maximumLineCount lays itself out at whatever size the content wants and
+     * draws straight over its neighbours. That is what a long notification did
+     * to the Quick Settings panel: the freedesktop spec lets an application put
+     * <b>, <i>, <u>, <a> and <img> in a notification body, so a chat client
+     * sending a bold sender name was enough to turn the cap off.
+     *
+     * And the sniffing is a guess about someone else's string. A window title,
+     * a track name or an app name containing a "<" is not markup, but AutoText
+     * cannot tell, and the shell would render half of it as a broken tag.
+     *
+     * Nothing in this shell ever wants rich text - textFormat was set nowhere
+     * before this line existed - so the honest default is to draw what we were
+     * given. Anything wanting the spec's markup should strip it to plain text
+     * on the way in instead; see NotificationStore.plainText.
+     */
+    textFormat: Text.PlainText
+
     // Align to the line box rather than the item box. Only has an effect when
     // the item is given a height larger than implicitHeight, which is what the
     // bar widgets do - see BarItem.

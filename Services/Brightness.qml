@@ -38,6 +38,13 @@ Singleton {
         setFraction(fraction + delta);
     }
 
+    // Re-read now rather than at the next poll. The brightness keys change the
+    // backlight from outside the shell and then say so over IPC, and an OSD
+    // that shows the old level for up to four seconds is showing a wrong one.
+    function refresh() {
+        probe.running = true;
+    }
+
     Process {
         id: probe
         running: true

@@ -64,6 +64,11 @@ Item {
             strokeWidth: 0
             strokeColor: "transparent"
 
+            // Small and quick to cross, so it wants the transition more than a
+            // large target does - a bare colour swap on something this size
+            // registers as a flicker rather than as a response.
+            Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+
             startX: root.direction === "right" ? 0 : root.size
             startY: 0
 

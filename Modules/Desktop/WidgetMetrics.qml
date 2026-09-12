@@ -64,7 +64,19 @@ Singleton {
         "media":      ({ w: 280, h: 150, aspect: 1.8 }),
 
         // The time at headline size, plus the date under it.
-        "clock":      ({ w: 200, h: 100, aspect: 2.2 })
+        "clock":      ({ w: 200, h: 100, aspect: 2.2 }),
+
+        /*
+         * The reading, then up to three detail lines under it, then the meter.
+         * The floor is the height at which the first detail line still fits -
+         * below that this is a percentage with a bar under it, which the bar
+         * widget already does in a fraction of the space.
+         *
+         * Wide enough for "2h 14m remaining" without eliding, and it breaks
+         * across late: the rows are stacked text, so laying them out sideways
+         * gains nothing until the widget is genuinely letterboxed.
+         */
+        "battery":    ({ w: 180, h: 96,  aspect: 2.4 })
     })
 
     readonly property var fallback: ({ w: 140, h: 90, aspect: 2.0 })

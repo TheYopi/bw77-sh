@@ -210,6 +210,20 @@ Singleton {
         return reducedMotion ? 0 : Math.round(base * animSpeed);
     }
 
+    /*
+     * durFast is the shell's hover-and-state speed.
+     *
+     * Every pointer-driven change - a fill lighting up under the cursor, a
+     * label going from dim to bright, a selection moving down a list - runs on
+     * this one number, so the whole interface answers the pointer at the same
+     * rate. Long enough not to snap, short enough that the control still feels
+     * attached to the hand moving over it: past about 150ms a hover begins to
+     * lag the cursor and reads as the shell thinking rather than responding.
+     *
+     * There is deliberately no second token for hover. Two names within twenty
+     * milliseconds of each other is how an interface ends up with half its
+     * controls answering at one speed and half at another.
+     */
     readonly property int durFast:    dur(130)
     readonly property int durNormal:  dur(220)
     readonly property int durSlow:    dur(380)
@@ -250,22 +264,47 @@ Singleton {
      * The defaults reproduce what the shell did before this existed, so an
      * untouched config looks unchanged.
      */
+    /*
+     * --- the menu family
+     *
+     * Everything that opens as a menu - the launcher, the Control Center, and
+     * the assorted prompts under "menus" - shares one entry now: a short slide
+     * up into place under a fade, on an ease-out, over 200ms.
+     *
+     * They used to each snap in with the glitch kick, which is the shell's
+     * signature and still is - it is one direction among eight and the
+     * Animations pane will put it back on any of these. But it is a hard,
+     * mechanical arrival, and reaching for a menu twenty times an hour is the
+     * one interaction where that costs more than it says. A surface that rises
+     * a little as it fades reads as though it came from where you clicked.
+     *
+     * 200ms is the top of the range that still feels like a response rather
+     * than a transition, and ease-out spends most of it decelerating, so the
+     * surface is legible well before it has finished settling.
+     */
     readonly property var motionDefaults: ({
         "dock":          ({ curve: "snap",    duration: 190, direction: "auto" }),
         "bar":           ({ curve: "ease-out", duration: 160, direction: "fade" }),
         "osd":           ({ curve: "snap",    duration: 200, direction: "scale" }),
         "notifications": ({ curve: "spring",  duration: 260, direction: "auto" }),
+        // Not part of the menu family: it is a full-height drawer docked to an
+        // edge, and "auto" resolves to that edge. Sliding it UP would move it by
+        // its own width, which is what `travel` is set to in that panel.
         "quickSettings": ({ curve: "snap",    duration: 220, direction: "glitch" }),
-        "controlCenter": ({ curve: "snap",    duration: 220, direction: "glitch" }),
-        "menus":         ({ curve: "snap",    duration: 180, direction: "scale" }),
-        "launcher":      ({ curve: "snap",    duration: 220, direction: "glitch" }),
+        "controlCenter": ({ curve: "ease-out", duration: 200, direction: "up" }),
+        "menus":         ({ curve: "ease-out", duration: 200, direction: "up" }),
+        "launcher":      ({ curve: "ease-out", duration: 200, direction: "up" }),
+        // Small, and it appears under the pointer rather than being asked for,
+        // so it moves quicker than a menu and travels less far. "auto" is the
+        // dock edge: a label on a bottom dock rises, one on a top dock drops.
+        "tooltip":       ({ curve: "ease-out", duration: 150, direction: "auto" }),
         "wallpaper":     ({ curve: "ease-in-out", duration: 600, direction: "fade" }),
         "theme":         ({ curve: "ease",    duration: 240, direction: "fade" })
     })
 
     readonly property var motionCategories: [
         "dock", "bar", "osd", "notifications", "quickSettings",
-        "controlCenter", "launcher", "menus", "wallpaper", "theme"
+        "controlCenter", "launcher", "menus", "tooltip", "wallpaper", "theme"
     ]
 
     readonly property var directionNames: [

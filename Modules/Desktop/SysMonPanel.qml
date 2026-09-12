@@ -121,54 +121,93 @@ WidgetFrame {
      * behind it, so a meter under it would be measuring against a maximum
      * nothing here knows.
      */
-    readonly property var gpuMetrics: {
+    function gpuMetricFor(key) {
+        switch (key) {
+        case "gpuUsage":
+            return { label: "GPU", value: Gpu.usage, text: Gpu.usage + "%",
+                     ratio: Gpu.usage / 100, history: Gpu.usageHistory,
+                     note: Gpu.hasPower ? (Gpu.power + " W") : Gpu.name,
+                     color: Theme.c("chartCpu") };
+        case "gpuVram":
+            return { label: "VRAM", value: Math.round(Gpu.vramRatio * 100),
+                     text: Math.round(Gpu.vramRatio * 100) + "%",
+                     ratio: Gpu.vramRatio, history: Gpu.vramHistory,
+                     note: Gpu.vramLabel, color: Theme.c("chartRam") };
+        case "gpuTemp":
+            return { label: Settings.t("TEMP"), value: Gpu.temp,
+                     text: Gpu.temp + "\u00B0",
+                     ratio: Math.min(1, Gpu.temp / 100), history: Gpu.tempHistory,
+                     note: Gpu.name, color: Theme.c("chartTemp") };
+        }
+        return { label: "GPU", value: Gpu.power, text: Gpu.power + " W",
+                 ratio: 0, history: [], note: Gpu.name,
+                 color: Theme.c("chartCpu") };
+    }
+
+    readonly property var gpuKeys: {
         const out = [];
         if (!Gpu.present) return out;
 
-        if (Gpu.hasUsage)
-            out.push({ label: "GPU", value: Gpu.usage, text: Gpu.usage + "%",
-                       ratio: Gpu.usage / 100, history: Gpu.usageHistory,
-                       note: Gpu.hasPower ? (Gpu.power + " W") : Gpu.name,
-                       color: Theme.c("chartCpu") });
-
-        if (Gpu.hasVram)
-            out.push({ label: "VRAM", value: Math.round(Gpu.vramRatio * 100),
-                       text: Math.round(Gpu.vramRatio * 100) + "%",
-                       ratio: Gpu.vramRatio, history: Gpu.vramHistory,
-                       note: Gpu.vramLabel, color: Theme.c("chartRam") });
-
-        if (Gpu.hasTemp)
-            out.push({ label: Settings.t("TEMP"), value: Gpu.temp,
-                       text: Gpu.temp + "\u00B0",
-                       ratio: Math.min(1, Gpu.temp / 100), history: Gpu.tempHistory,
-                       note: Gpu.name, color: Theme.c("chartTemp") });
+        if (Gpu.hasUsage) out.push("gpuUsage");
+        if (Gpu.hasVram)  out.push("gpuVram");
+        if (Gpu.hasTemp)  out.push("gpuTemp");
 
         // A card that reports power and nothing else - some Intel parts - still
         // gets a block, or the widget would be empty on a machine that does
         // have a GPU.
-        if (out.length === 0 && Gpu.hasPower)
-            out.push({ label: "GPU", value: Gpu.power, text: Gpu.power + " W",
-                       ratio: 0, history: [], note: Gpu.name,
-                       color: Theme.c("chartCpu") });
+        if (out.length === 0 && Gpu.hasPower) out.push("gpuPower");
 
         return out;
     }
 
-    readonly property var metrics: {
+    /*
+     * --- what the Repeater below is given, and why it is names rather than
+     *     readings
+     *
+     * This was a list of metric OBJECTS, each one built from SysMon.cpu,
+     * SysMon.mem and the rest. Those move ten times a second, so the binding
+     * produced a fresh array ten times a second - and a Repeater handed a new
+     * JavaScript array rebuilds every delegate it has.
+     *
+     * A delegate here is not cheap. It is a Graph, which is a Shape with two
+     * paths and a sixty-point polyline; three CyberTexts, each carrying its own
+     * FontMetrics; and a SegmentBar, which builds one Rectangle with a colour
+     * Behavior per segment and sizes that count from the cell width, so a wide
+     * widget is thirty of them. Multiply by the number of metrics switched on,
+     * destroy and rebuild the lot ten times a second, and do it permanently,
+     * because this widget lives on the wallpaper and is never closed. That was
+     * the single largest recurring cost in the shell.
+     *
+     * The composition of the list only changes when the user changes it, so
+     * that is what the model carries. Each delegate looks its own readings up
+     * and re-binds them in place, which is the part that was always supposed to
+     * be happening ten times a second.
+     */
+    readonly property var metricKeys: {
         switch (root.kind) {
-        case "cpu":     return [root.cpuMetric, root.tempMetric];
-        case "memory":  return [root.memMetric];
-        case "network": return [root.netMetric];
-        case "gpu":     return root.gpuMetrics;
+        case "cpu":     return ["cpu", "temp"];
+        case "memory":  return ["mem"];
+        case "network": return ["net"];
+        case "gpu":     return root.gpuKeys;
         }
 
         // The combined widget, which keeps its per-metric switches.
         const out = [];
-        if (root.cfg("showCpu", true))  out.push(root.cpuMetric);
-        if (root.cfg("showRam", true))  out.push(root.memMetric);
-        if (root.cfg("showTemp", true)) out.push(root.tempMetric);
-        if (root.cfg("showNet", true))  out.push(root.netMetric);
+        if (root.cfg("showCpu", true))  out.push("cpu");
+        if (root.cfg("showRam", true))  out.push("mem");
+        if (root.cfg("showTemp", true)) out.push("temp");
+        if (root.cfg("showNet", true))  out.push("net");
         return out;
+    }
+
+    function metricFor(key) {
+        switch (key) {
+        case "cpu":  return root.cpuMetric;
+        case "mem":  return root.memMetric;
+        case "temp": return root.tempMetric;
+        case "net":  return root.netMetric;
+        }
+        return root.gpuMetricFor(key);
     }
 
     /*
@@ -207,7 +246,7 @@ WidgetFrame {
         CyberText {
             anchors.centerIn: parent
             width: parent.width - Theme.space2 * 2
-            visible: root.metrics.length === 0
+            visible: root.metricKeys.length === 0
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.Wrap
             role: "micro"
@@ -220,7 +259,7 @@ WidgetFrame {
                                    : Settings.t("Reading GPU...")))
         }
 
-        readonly property int count: Math.max(1, root.metrics.length)
+        readonly property int count: Math.max(1, root.metricKeys.length)
         readonly property int gap: Theme.space2
 
         readonly property real cellW: root.wide
@@ -236,11 +275,16 @@ WidgetFrame {
             spacing: body.gap
 
             Repeater {
-                model: root.metrics
+                model: root.metricKeys
 
                 Item {
                     id: cell
-                    required property var modelData
+                    required property string modelData
+
+                    // The readings, re-resolved whenever a sample lands. This
+                    // is a binding on the cell rather than four separate
+                    // lookups in the children, so one sample costs one call.
+                    readonly property var metric: root.metricFor(modelData)
 
                     width: body.cellW
                     height: body.cellH
@@ -252,9 +296,9 @@ WidgetFrame {
                     Graph {
                         anchors.fill: parent
                         anchors.topMargin: cell.height * 0.35
-                        values: cell.modelData.history
+                        values: cell.metric.history
                         maxValue: 100
-                        lineColor: cell.modelData.color
+                        lineColor: cell.metric.color
                         opacity: 0.28
                         visible: root.cfg("showBars", true) && cell.height >= 44
                     }
@@ -267,7 +311,7 @@ WidgetFrame {
 
                         CyberText {
                             anchors.baseline: bigValue.baseline
-                            text: cell.modelData.label
+                            text: cell.metric.label
                             role: "micro"
                             color: Theme.textMuted
                             visible: root.cfg("showLabels", true)
@@ -275,14 +319,14 @@ WidgetFrame {
 
                         CyberText {
                             id: bigValue
-                            text: cell.modelData.text
+                            text: cell.metric.text
                             role: "mono"
                             // Scales with the cell so a large widget is
                             // genuinely readable across a room, capped so a
                             // small one does not blow out.
                             sizeOverride: Math.max(Theme.fontSmall,
                                 Math.min(Theme.fontTitle, cell.height * 0.42))
-                            color: cell.modelData.color
+                            color: cell.metric.color
                         }
                     }
 
@@ -293,7 +337,7 @@ WidgetFrame {
                         anchors.left: parent.left
                         anchors.top: readout.bottom
                         anchors.right: parent.right
-                        text: cell.modelData.note
+                        text: cell.metric.note
                         role: "micro"
                         caps: false
                         color: Theme.alpha(Theme.textMuted, 0.85)
@@ -309,9 +353,9 @@ WidgetFrame {
                         anchors.bottom: parent.bottom
                         height: 6
                         segments: Math.max(6, Math.floor(cell.width / 9))
-                        value: cell.modelData.ratio
+                        value: cell.metric.ratio
                         visible: root.cfg("showBars", true)
-                            && cell.modelData.ratio > 0
+                            && cell.metric.ratio > 0
                             && cell.height >= 40
                     }
                 }

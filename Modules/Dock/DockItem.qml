@@ -325,28 +325,62 @@ Item {
         opacity: tip.wanted ? 1 : 0
         visible: opacity > 0.01
 
+        /*
+         * Its own motion category, not the dock's.
+         *
+         * A tooltip is not the dock opening - it is a small thing that appears
+         * because the pointer stopped, and it wants to be quicker and gentler
+         * than the surface it happens to live in. Riding on "dock" meant every
+         * time the dock's entry was retuned the labels came along with it, and
+         * a dock set to a long dramatic slide gave its tooltips the same.
+         */
+        readonly property int tipDuration: Theme.durationFor("tooltip")
+        readonly property int tipCurve: Theme.curveFor("tooltip")
+
+        /*
+         * Where it comes from.
+         *
+         * "auto" is the useful answer and the default: a tooltip belongs to the
+         * icon it names, so it should look like it came out of it - up out of a
+         * bottom dock, down out of a top one, sideways out of a vertical one.
+         * Naming a direction outright in the Animations pane overrides that,
+         * and "fade" means it arrives without moving at all.
+         */
+        readonly property string tipDirection: {
+            const d = Theme.directionFor("tooltip");
+            if (d !== "auto") return d;
+            if (root.vertical) return Settings.dock.position === "left" ? "left" : "right";
+            return Settings.dock.position === "top" ? "down" : "up";
+        }
+
+        // Short. The label is a few characters sitting next to the thing it
+        // describes; anything further reads as a second surface flying in.
+        readonly property int tipTravel: 6
+
+        readonly property int tipFromX: tip.tipDirection === "left" ? -tip.tipTravel
+            : tip.tipDirection === "right" ? tip.tipTravel : 0
+        readonly property int tipFromY: tip.tipDirection === "up" ? tip.tipTravel
+            : tip.tipDirection === "down" ? -tip.tipTravel : 0
+
         Behavior on opacity {
             enabled: Settings.animations.surfaceOpen && !Theme.reducedMotion
             NumberAnimation {
-                duration: Theme.durationFor("dock")
-                easing.type: Theme.curveFor("dock")
+                duration: tip.tipDuration
+                easing.type: tip.tipCurve
             }
         }
 
-        // Slides the short way out of the icon it belongs to.
         transform: Translate {
-            x: tip.wanted ? 0 : (root.vertical
-                ? (Settings.dock.position === "left" ? -6 : 6) : 0)
-            y: tip.wanted ? 0 : (root.vertical ? 0
-                : (Settings.dock.position === "top" ? -6 : 6))
+            x: tip.wanted ? 0 : tip.tipFromX
+            y: tip.wanted ? 0 : tip.tipFromY
 
             Behavior on x {
                 enabled: Settings.animations.surfaceOpen && !Theme.reducedMotion
-                NumberAnimation { duration: Theme.durationFor("dock"); easing.type: Theme.curveFor("dock") }
+                NumberAnimation { duration: tip.tipDuration; easing.type: tip.tipCurve }
             }
             Behavior on y {
                 enabled: Settings.animations.surfaceOpen && !Theme.reducedMotion
-                NumberAnimation { duration: Theme.durationFor("dock"); easing.type: Theme.curveFor("dock") }
+                NumberAnimation { duration: tip.tipDuration; easing.type: tip.tipCurve }
             }
         }
 

@@ -9,8 +9,9 @@ import qs.Common
  * The description no longer prints under the label. Sixteen panes of two-line
  * rows put a paragraph of explanation next to every switch whether or not
  * anyone was asking, which is what pushed the list long enough to need the
- * scrollbar in the first place. It is still declared here - it just renders in
- * the tip panel, for the one row you are actually on.
+ * scrollbar in the first place. It is still declared here - it just waits for
+ * somebody to dwell on the row and then says its piece in a tooltip. See
+ * CcNav's tip section for why the window draws it rather than the row.
  */
 Item {
     id: root
@@ -116,10 +117,10 @@ Item {
      * the row flickering between two states as the pointer crossed a pane the
      * keyboard was already on.
      *
-     * The distinction itself still exists where it earns its keep: the tip
-     * panel on the right shows its key hints only under the keyboard, which is
-     * the one place the difference changes what you can do rather than just
-     * how a row looks.
+     * The distinction itself still exists where it earns its keep: the key
+     * hints in the footer are shown only under the keyboard, which is the one
+     * place the difference changes what you can do rather than just how a row
+     * looks.
      */
     Rectangle {
         anchors.fill: parent
@@ -168,14 +169,74 @@ Item {
         height: childrenRect.height
     }
 
+    /*
+     * --- the dwell
+     *
+     * Three seconds of a row being settled on, by either input. The pointer
+     * restarts it on every real movement inside the row rather than starting it
+     * once on entry, so the three seconds are three seconds of the pointer
+     * being still - crossing the pane, or sliding down it looking for
+     * something, never spends that anywhere and so never raises a tip. The
+     * keyboard arms it when the row becomes the active one, which is the same
+     * idea: arrowing past a row is not stopping on it.
+     *
+     * Anchored to the row's bottom-left corner rather than to the pointer,
+     * which is the only position the keyboard could have used - and is better
+     * under the mouse too, since the tip then lines up with the label it is
+     * about instead of wherever the cursor happened to stop.
+     *
+     * Read when the timer is set rather than when it fires. Three seconds is
+     * long enough for a pane to have been scrolled underneath a still pointer,
+     * so it is read again on the way out of the timer as well.
+     */
+    Timer {
+        id: dwell
+        interval: 3000
+        repeat: false
+        onTriggered: {
+            const p = root.mapToItem(null, 0, root.height);
+            if (p) CcNav.showTip(root, p.x, p.y);
+        }
+    }
+
+    function armTip() {
+        if (root.description === "") return;
+        dwell.restart();
+    }
+
+    /*
+     * The keyboard's turn.
+     *
+     * Only under the keyboard: hovering also makes a row active, and arming
+     * from both would restart the timer twice on every mouse-over. Leaving
+     * takes down whatever this row put up, so arrowing away is as immediate as
+     * moving the pointer away.
+     */
+    onActiveChanged: {
+        if (root.active && CcNav.keyboardMode) {
+            armTip();
+        } else if (!root.active) {
+            dwell.stop();
+            CcNav.hideTip(root);
+        }
+    }
+
     MouseArea {
         id: rowMouse
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
 
-        onEntered: if (root.navigable) CcNav.hoverEntered(root)
-        onExited: if (root.navigable) CcNav.hoverLeft(root)
+        onEntered: {
+            if (root.navigable) CcNav.hoverEntered(root);
+            armTip();
+        }
+
+        onExited: {
+            if (root.navigable) CcNav.hoverLeft(root);
+            dwell.stop();
+            CcNav.hideTip(root);
+        }
 
         // Real cursor travel takes the surface back off the keyboard; the
         // scroll-under-a-still-mouse case does not. See CcNav.cursorMoved.
@@ -183,6 +244,12 @@ Item {
             if (!root.navigable) return;
             if (!CcNav.cursorMoved(rowMouse, mouse.x, mouse.y)) return;
             CcNav.pointerTook(root);
+
+            // A moved pointer is a pointer that has not settled: whatever it
+            // was about to say is no longer about this position, and anything
+            // already on screen belongs to where it used to be.
+            CcNav.hideTip(root);
+            armTip();
         }
     }
 }

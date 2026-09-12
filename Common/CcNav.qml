@@ -88,10 +88,48 @@ Singleton {
         return dx > 2 || dy > 2;
     }
 
-    readonly property bool hasTip: activeRow !== null
-    readonly property string tipTitle: activeRow ? activeRow.label : ""
-    readonly property string tipBody: activeRow ? activeRow.description : ""
     readonly property string tipKind: activeRow ? activeRow.navKind() : ""
+
+    /*
+     * --- descriptions, on request rather than on display
+     *
+     * They used to live in a column down the right-hand side, printing the
+     * description of whichever row was focused. That column cost a quarter of
+     * the window's width permanently in order to explain one row at a time,
+     * and it explained it whether or not anybody had asked - crossing the pane
+     * with the pointer rewrote it constantly out of the corner of the eye.
+     *
+     * Now a row that is dwelt on for three seconds says its piece in a tooltip
+     * and the rest of the time says nothing. Three seconds is long enough that
+     * passing over a row on the way somewhere else never triggers it, which is
+     * the entire point: the explanation arrives for the person who stopped to
+     * look, not for the pointer.
+     *
+     * Held here rather than in the row because the tooltip has to be drawn
+     * outside the pane - a pane is a clipping Flickable, and a tip on its last
+     * row would be cut in half by the edge it needs to hang over. The row asks,
+     * the window draws.
+     */
+    property var tipRow: null
+    property real tipX: 0
+    property real tipY: 0
+
+    readonly property string tipText: tipRow ? tipRow.description : ""
+
+    function showTip(row, x, y) {
+        if (!row || !row.description) return;
+        tipX = x;
+        tipY = y;
+        tipRow = row;
+    }
+
+    // Named row, so a tip that has already been replaced by a later one is not
+    // taken down by the earlier row finally noticing the pointer has left.
+    function hideTip(row) {
+        if (tipRow === row) tipRow = null;
+    }
+
+    function clearTip() { tipRow = null; }
 
     property var _rows: []
 

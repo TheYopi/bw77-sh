@@ -54,16 +54,27 @@ PanelWindow {
         Polkit.cancel();
     }
 
-    Rectangle {
+    /*
+     * Still a barrier, no longer a scrim.
+     *
+     * It swallows clicks without dismissing - an authentication request needs
+     * an explicit answer, so clicking away must not count as one - but it no
+     * longer paints over the screen.
+     *
+     * Worth knowing what that costs: on every other surface the dimming was
+     * decoration, and here it was doing a job. It said "this is modal, the rest
+     * of the screen is not accepting input", which is now something you find
+     * out by clicking and having nothing happen. The dialog is opaque and
+     * bordered so it still reads as a prompt; restoring the fill is one line if
+     * that turns out to matter.
+     */
+    MouseArea {
         anchors.fill: parent
-        color: Theme.alpha(Theme.bgDeep, 0.82)
-
-        // Swallows clicks without dismissing: the request needs an explicit
-        // answer, so the backdrop is a barrier rather than a cancel button.
-        MouseArea { anchors.fill: parent }
     }
 
-    Scanlines { anchors.fill: parent; strength: Settings.fx.scanlineOpacity * 1.5 }
+    // No full-screen scanlines either, for the same reason as the fill: with
+    // nothing behind them they would be a grid of lines drawn over your live
+    // windows. The dialog draws its own through Panel.
 
     GlitchBox {
         category: "menus"

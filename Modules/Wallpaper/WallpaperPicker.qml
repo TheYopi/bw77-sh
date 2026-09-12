@@ -90,6 +90,25 @@ Item {
 
                     CyberText {
                         anchors.verticalCenter: parent.verticalCenter
+                        text: Settings.t("Build it only in the overview")
+                        role: "micro"
+                        color: Theme.textDim
+                    }
+
+                    CyberToggle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        checked: Settings.wallpaper.backdropOnDemand
+                        onToggled: (v) => Settings.wallpaper.backdropOnDemand = v
+                    }
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: Theme.space3
+                    visible: Settings.wallpaper.niriBackdrop
+
+                    CyberText {
+                        anchors.verticalCenter: parent.verticalCenter
                         width: 140
                         text: Settings.t("Backdrop brightness")
                         role: "micro"
@@ -271,6 +290,8 @@ Item {
                         : (thumbMouse.containsMouse ? Theme.danger : Theme.alpha(Theme.border, 0.7))
                     strokeWidth: parent.current ? 2 : 1
                     notch: Theme.notchSmall
+
+                    Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
                 }
 
                 Rectangle {
@@ -279,7 +300,12 @@ Item {
                     anchors.right: parent.right
                     height: 18
                     color: Theme.alpha(Theme.bgDeep, 0.8)
-                    visible: thumbMouse.containsMouse || parent.current
+                    // The filename strip fades with the frame rather than
+                    // popping in on the frame the pointer crosses the thumbnail.
+                    opacity: thumbMouse.containsMouse || parent.current ? 1 : 0
+                    visible: opacity > 0.01
+
+                    Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
 
                     CyberText {
                         anchors.fill: parent

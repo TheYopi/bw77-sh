@@ -295,7 +295,11 @@ Item {
 
                 NotchRect {
                     anchors.fill: parent
-                    visible: row.isHighlighted || row.isCurrent || rowMouse.containsMouse
+                    // Several hundred rows go past under the pointer while
+                    // scrolling a font list, so this one is worth fading.
+                    opacity: row.isHighlighted || row.isCurrent
+                        || rowMouse.containsMouse ? 1 : 0
+                    visible: opacity > 0.01
                     fillColor: row.isHighlighted
                         ? Theme.alpha(Theme.accent, 0.2)
                         : Theme.alpha(Theme.accent, rowMouse.containsMouse ? 0.1 : 0.05)
@@ -306,6 +310,10 @@ Item {
                     notchTopRight: false
                     notchBottomRight: true
                     notchBottomLeft: false
+
+                    Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+                    Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
                 }
 
                 // A diamond rather than a word: "in use" is a fact about one row

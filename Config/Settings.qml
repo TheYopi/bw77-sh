@@ -29,6 +29,7 @@ Singleton {
     readonly property alias notifications: adapter.notifications
     readonly property alias clock: adapter.clock
     readonly property alias osd: adapter.osd
+    readonly property alias emoji: adapter.emoji
     readonly property alias quickSettings: adapter.quickSettings
     readonly property alias audio: adapter.audio
     readonly property alias animations: adapter.animations
@@ -102,7 +103,7 @@ Singleton {
         "Apply": "Применить",
         "Arc": "Дуга",
         "Attached": "Прикреплённая",
-        "Attached sits flush against the screen edge; floating is a detached block": "Прикреплённая примыкает к краю экрана; плавающая — отдельный блок",
+        "Attached sits flush against the screen edge, detached is a block with its own frame, and floating drops the frame to leave only the widgets": "Прикреплённая примыкает к краю экрана, отдельная — блок со своей рамкой, плавающая убирает рамку и оставляет только виджеты",
         "Audio": "Звук",
         "Audio visualiser": "Визуализатор звука",
         "Authenticate": "Аутентификация",
@@ -114,6 +115,7 @@ Singleton {
         "Backdrop blur": "Размытие подложки",
         "Backdrop brightness": "Яркость подложки",
         "Backdrop surface": "Поверхность подложки",
+        "Build it only in the overview": "Создавать только в обзоре",
         "Background opacity": "Непрозрачность фона",
         "Band count and frame rate": "Полосы и частота кадров",
         "Bands": "Полосы",
@@ -135,6 +137,8 @@ Singleton {
         "Bottom centre": "Снизу по центру",
         "Bottom left": "Снизу слева",
         "Bottom right": "Снизу справа",
+        "Detached": "Отдельная",
+        "Dividers": "Разделители",
         "Brightness": "Яркость",
         "Brightness slider": "Ползунок яркости",
         "Browse": "Обзор",
@@ -440,6 +444,7 @@ Singleton {
         "Test": "Проверка",
         "Text": "Текст",
         "Text colour": "Цвет текста",
+        "Frame colour": "Цвет рамки",
         "Text decode": "Декодирование текста",
         "Text scrambles before settling when a value changes": "Текст перемешивается и собирается заново при изменении значения",
         "Text weight": "Насыщенность текста",
@@ -507,9 +512,50 @@ Singleton {
         "Apply now": "Применить сейчас",
         "Applying\u2026": "Применение\u2026",
         "Bluetooth is off": "Bluetooth выключен",
+        "Network & Internet": "Сеть и Интернет",
+        "Search": "Поиск",
+        "Multitasking": "Многозадачность",
+        "Not connected": "Не подключено",
+        "Connect": "Подключить",
+        "Disconnect": "Отключить",
+        "Secured": "Защищённая",
+        "Open": "Открыть",
+        "Scan": "Поиск",
+        "Scanning": "Идёт поиск",
+        "Trusted": "Доверенное",
+        "Not paired": "Не сопряжено",
+        "Forget": "Забыть",
+        "Address": "Адрес",
+        "Battery": "Батарея",
+        "Adapter": "Адаптер",
+        "Elsewhere": "В другом месте",
+        "Connections": "Подключения",
+        "Wi-Fi": "Wi-Fi",
+        "Scan for networks": "Искать сети",
+        "Scan for devices": "Искать устройства",
+        "Network settings": "Настройки сети",
+        "Bluetooth settings": "Настройки Bluetooth",
+        "Forget this device": "Забыть это устройство",
+        "No adapter": "Нет адаптера",
+        "No Wi-Fi adapter": "Нет адаптера Wi-Fi",
+        "No Bluetooth adapter": "Нет адаптера Bluetooth",
+        "Wi-Fi off": "Wi-Fi выключен",
+        "Wired connection active": "Проводное подключение активно",
+        "Offline": "Не в сети",
+        "Connected": "Подключено",
+        "Wired": "Проводная",
+        "Off": "Выкл",
+        "Charge": "Заряд",
+        "Charging": "Зарядка",
+        "Condition": "Состояние",
+        "Draw": "Расход",
+        "Fully charged": "Заряжена",
+        "No battery on this machine": "На этом компьютере нет батареи",
+        "On battery": "От батареи",
+        "remaining": "осталось",
+        "to full": "до полной",
         "Focused": "Активное",
         "Focused, from": "Активное, от",
-        "From the application": "От приложения",
         "From palette": "Из палитры",
         "In use": "Используется",
         "Margin above and below": "Отступ сверху и снизу",
@@ -539,6 +585,31 @@ Singleton {
         "No networks found": "Сети не найдены",
         "Output": "Вывод",
         "Output muted": "Звук выключен",
+        "Volume +": "Громкость +",
+        "Volume -": "Громкость -",
+        "Brightness +": "Яркость +",
+        "Brightness -": "Яркость -",
+        "Unmuted": "Звук включён",
+        "Microphone": "Микрофон",
+        "Unknown track": "Неизвестный трек",
+        "Keyboard layout": "Раскладка клавиатуры",
+        "Emoji": "Эмодзи",
+        "Recent": "Недавние",
+        "Smileys & Emotion": "Смайлы и эмоции",
+        "People & Body": "Люди и тело",
+        "Animals & Nature": "Животные и природа",
+        "Food & Drink": "Еда и напитки",
+        "Travel & Places": "Путешествия и места",
+        "Activities": "Занятия",
+        "Objects": "Предметы",
+        "Symbols": "Символы",
+        "Flags": "Флаги",
+        "Paste": "Вставить",
+        "Type to search by name": "Начните печатать для поиска по названию",
+        "Brightness changes": "Меняется яркость",
+        "Media keys are pressed": "Нажаты медиаклавиши",
+        "Sent by the compositor's key bindings over IPC. Each key keeps its own command and adds a call to: qs -c bw77-shell ipc call osd ...": "Приходит из привязок клавиш композитора по IPC. Каждая клавиша сохраняет свою команду и добавляет вызов: qs -c bw77-shell ipc call osd ...",
+        "The overlay shown for volume, brightness, media keys and lock keys": "Оверлей для громкости, яркости, медиаклавиш и клавиш-переключателей",
         "Overridden": "Переопределено",
         "Pairing": "Сопряжение",
         "Pin to dock": "Закрепить в доке",
@@ -591,7 +662,36 @@ Singleton {
         return hit === undefined ? source : hit;
     }
 
+    /*
+     * --- persistence, coalesced
+     *
+     * Every write serialises the whole settings tree and puts it on disk, and
+     * the adapter reports a change per property assignment. A slider drag
+     * assigns on every mouse-move event, so dragging one control across its
+     * range wrote the entire file dozens of times a second - on the UI thread,
+     * inside the same event handler that was supposed to be moving the chip.
+     * That is why adjusting anything in the Control Center felt heavier than
+     * the rest of the shell, and why it got worse the more settings there were.
+     *
+     * A short debounce collapses a burst into one write. The window is well
+     * under the time it takes to let go of a slider and reach for something
+     * else, so a change is on disk before it could plausibly be lost, and any
+     * caller wanting the old guarantee can still ask for saveNow().
+     */
+    Timer {
+        id: saveTimer
+        interval: 300
+        onTriggered: fileView.writeAdapter()
+    }
+
     function save() {
+        saveTimer.restart();
+    }
+
+    // Bypasses the debounce. For anything that must be durable before the next
+    // thing happens - a write the shell is about to be restarted across.
+    function saveNow() {
+        saveTimer.stop();
         fileView.writeAdapter();
     }
 
@@ -717,12 +817,36 @@ Singleton {
      */
     property bool migrated: false
 
+    // Bumped when a stored value changes meaning rather than merely gaining a
+    // sibling. migrate() brings older files up to it; a file written fresh is
+    // stamped with it and skips the rewrite.
+    readonly property int schemaVersion: 1
+
     function migrate() {
         if (migrated) return;
         if (!loaded || !defaults || Object.keys(defaults).length === 0) return;
         migrated = true;
 
         let changed = false;
+
+        /*
+         * The bar's "floating" became "detached".
+         *
+         * The name was freed for the new frameless style, so a file written
+         * before that says "floating" and means the framed block. Renaming it
+         * here keeps the bar someone already had; the version stamp is what
+         * stops it renaming a bar they deliberately set to the new floating
+         * afterwards.
+         */
+        if (adapter.schema < 1) {
+            if (adapter.bar.style === "floating") {
+                adapter.bar.style = "detached";
+                changed = true;
+            }
+            adapter.schema = root.schemaVersion;
+            changed = true;
+        }
+
         changed = mergeIdList("quickSettings", "headerButtons") || changed;
         changed = mergeIdList("quickSettings", "tiles") || changed;
         changed = mergeIdList("quickSettings", "sections") || changed;
@@ -796,11 +920,14 @@ Singleton {
         watchChanges: true
 
         onFileChanged: reload()
-        onAdapterUpdated: writeAdapter()
+        // Debounced - see save() above. A drag reports one adapter update per
+        // mouse-move and each one used to rewrite the file.
+        onAdapterUpdated: root.save()
         onLoadFailed: {
             // Most commonly the file does not exist yet. Writing the adapter
             // creates it with the defaults declared below, which need no
             // reconciling - they are the defaults.
+            adapter.schema = root.schemaVersion;
             writeAdapter();
             root.loaded = true;
             root.migrated = true;
@@ -812,6 +939,9 @@ Singleton {
 
         JsonAdapter {
             id: adapter
+
+            // See schemaVersion. Zero means "written before this existed".
+            property int schema: 0
 
             property JsonObject general: JsonObject {
                 // Interface language. Anything without a translation falls
@@ -897,9 +1027,17 @@ Singleton {
                 property string position: "top"      // top | bottom
                 property int height: 34
 
-                // attached spans the screen edge to edge; floating is a
-                // detached block with its own margins and width.
-                property string style: "attached"    // attached | floating
+                /*
+                 * attached - edge to edge, flush against the screen edge.
+                 * detached - a block with its own margins, width and frame.
+                 * floating - that block with no frame: just the widgets.
+                 *
+                 * "floating" used to mean what "detached" means now, so
+                 * migrate() renames it in an existing config - otherwise
+                 * everyone who had a floating bar would lose its frame on
+                 * upgrade.
+                 */
+                property string style: "attached"    // attached | detached | floating
                 property int marginH: 12
                 property int marginV: 8
                 property int floatingWidth: 0        // 0 = as wide as the screen allows
@@ -1089,6 +1227,11 @@ Singleton {
                 property bool onMute: true
                 property bool onMicMute: true
 
+                // Both of these arrive over IPC from the compositor's key
+                // bindings, not from watching state - see OsdLayer.
+                property bool onBrightness: true
+                property bool onMedia: true
+
                 // Lock keys are one toggle, the layout is another: they come
                 // from different places (keyboard LEDs versus the compositor)
                 // and one of them costs a poll while it is on.
@@ -1211,6 +1354,20 @@ Singleton {
                 ]
             }
 
+            property JsonObject emoji: JsonObject {
+                // Most recent first, each as [emoji, name, keywords] - the same
+                // shape as an entry in Assets/emoji.json, so the Recent tab
+                // needs no lookup. One grid page's worth is kept.
+                property var recent: []
+
+                // Every method copies with wl-copy first. Then:
+                //   auto  - type into terminals, Ctrl+V everywhere else
+                //   type  - type it with wtype (fails in browsers)
+                //   paste - send Ctrl+V (not paste in terminals)
+                //   copy  - clipboard only
+                property string pasteMethod: "auto"
+            }
+
             property JsonObject notifications: JsonObject {
                 // top-left | top-center | top-right | bottom-left | bottom-center | bottom-right
                 property string position: "top-right"
@@ -1251,6 +1408,16 @@ Singleton {
                 // Second background surface for niri's overview backdrop. See
                 // Modules/Wallpaper/WallpaperLayer.qml for why it is separate.
                 property bool niriBackdrop: true
+
+                /*
+                 * Build the backdrop surface only while the overview is open.
+                 *
+                 * It is a full-screen layer surface per monitor, and with blur
+                 * on it carries a full-screen offscreen buffer as well - none
+                 * of which is ever on screen outside the overview. Off keeps it
+                 * resident for the whole session, which is what it used to do.
+                 */
+                property bool backdropOnDemand: true
                 property real backdropDim: 0.55
 
                 // niri has no blur of its own, so the backdrop surface blurs

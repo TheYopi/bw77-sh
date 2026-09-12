@@ -179,19 +179,20 @@ PanelWindow {
         Wallpapers.set(files[index], "");
     }
 
-    // --- backdrop
-    Rectangle {
+    /*
+     * --- backdrop: a click target, not a scrim.
+     *
+     * Covers the screen so a click outside dismisses, and paints nothing. The
+     * card is opaque and bordered; the dimming was compensating for a legibility
+     * problem it does not have.
+     *
+     * The full-screen scanlines went with it - they had the scrim to sit on and
+     * would otherwise be a grid of lines over your live windows. The card draws
+     * its own through Panel.
+     */
+    MouseArea {
         anchors.fill: parent
-        color: Theme.alpha(Theme.bgDeep, 0.88)
-        MouseArea {
-            anchors.fill: parent
-            onClicked: Shell.wallpaperSelectorOpen = false
-        }
-    }
-
-    Scanlines {
-        anchors.fill: parent
-        strength: Settings.fx.scanlineOpacity * 1.5
+        onClicked: Shell.wallpaperSelectorOpen = false
     }
 
     GlitchBox {
@@ -412,6 +413,11 @@ PanelWindow {
                                 notchTopRight: false
                                 notchBottomRight: true
                                 notchBottomLeft: false
+
+                                // In step with the dimming above it, which was
+                                // already easing while the frame it belongs to
+                                // changed colour on the frame.
+                                Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
                             }
 
                             // File name, only for the tile in play - a caption
@@ -423,8 +429,11 @@ PanelWindow {
                                 anchors.right: parent.right
                                 height: 22
                                 color: Theme.alpha(Theme.bgDeep, 0.88)
-                                visible: tile.focused || tile.current
-                                         || tileMouse.containsMouse
+                                opacity: tile.focused || tile.current
+                                         || tileMouse.containsMouse ? 1 : 0
+                                visible: opacity > 0.01
+
+                                Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
 
                                 CyberText {
                                     anchors.fill: parent
@@ -626,6 +635,8 @@ PanelWindow {
                             text: Settings.t("Close")
                             role: "label"
                             color: closeMouse.containsMouse ? Theme.text : Theme.textDim
+
+                            Behavior on color { ColorAnimation { duration: Theme.durFast } }
                         }
                     }
 

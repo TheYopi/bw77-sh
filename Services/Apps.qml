@@ -282,7 +282,23 @@ Singleton {
         return Quickshell.iconPath("application-x-executable", true);
     }
 
+    /*
+     * Steam first, for the same reason iconFor checks it first.
+     *
+     * A game has no desktop entry of its own, so resolve() either finds nothing
+     * and the caller is handed the raw "steam_app_1091500" - which is what the
+     * dock captioned every running game with - or it matches one of the dozens
+     * of library launchers claiming "steam" and names the game after some other
+     * game entirely. Steam's own manifest is the only source that answers this
+     * correctly, and it is the one thing the app id is guaranteed to unlock.
+     */
     function nameFor(id) {
+        const steamId = steamAppId(id);
+        if (steamId !== "") {
+            const game = Steam.nameFor(steamId);
+            if (game) return game;
+        }
+
         const entry = resolve(id);
         if (entry && entry.name) return entry.name;
         return id;

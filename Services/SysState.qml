@@ -26,8 +26,22 @@ Singleton {
     property int netStrength: 0           // percent, wifi only
     property bool netConnected: false
 
+    /*
+     * --- offline and "there is nothing to be offline with" are not the same
+     *
+     * The panel could only say Offline, so a machine with no wireless card
+     * looked like a machine that had not connected yet: the Wi-Fi toggle
+     * offered to turn on a radio that was not there, the list below it said
+     * "Wi-Fi is off", and neither statement was true. Both of these come from
+     * the poller, which asks what devices exist rather than what they are
+     * doing.
+     */
+    property bool netPresent: false
+    property bool wifiPresent: false
+
     readonly property string netIcon: {
-        if (!netConnected) return "\uf127";                  // broken link
+        if (!netPresent) return "\uf127";                    // broken link
+        if (!netConnected) return "\uf127";
         if (netType === "ethernet") return "\uDB80\uDE00";   // nf-md-ethernet
         if (netStrength >= 70) return "\uf1eb";
         if (netStrength >= 40) return "\uf6aa";
@@ -35,9 +49,29 @@ Singleton {
     }
 
     readonly property string netLabel: {
-        if (!netConnected) return "Offline";
+        if (!netPresent) return Settings.t("No adapter");
+        if (!netConnected)
+            return wifiPresent && !wifiEnabled ? Settings.t("Wi-Fi off")
+                                               : Settings.t("Offline");
         if (netName !== "") return netName;
-        return netType === "ethernet" ? "Wired" : "Connected";
+        return netType === "ethernet" ? Settings.t("Wired") : Settings.t("Connected");
+    }
+
+    /*
+     * What the tile calls itself, which is not what it is connected to.
+     *
+     * GNOME's tile keeps one word in the title and puts the network in the line
+     * underneath, and it is the better arrangement for the same reason the
+     * glyph sits in a fixed slot: the title stays put while the value changes,
+     * so a column of tiles can be read down rather than re-read every time
+     * something reconnects. It also stops a long SSID eliding the one word
+     * that says which tile this is.
+     */
+    readonly property string netKind: {
+        if (!netPresent) return Settings.t("Network");
+        if (netType === "ethernet") return Settings.t("Wired");
+        if (wifiPresent) return "Wi-Fi";
+        return Settings.t("Network");
     }
 
     // --- access points from the poller
@@ -45,6 +79,8 @@ Singleton {
     property bool wifiEnabled: false
 
     function toggleWifi() {
+        // Nothing to switch on, and nmcli would report as much into a void.
+        if (!wifiPresent) return;
         Quickshell.execDetached(["nmcli", "radio", "wifi", wifiEnabled ? "off" : "on"]);
         refresh.restart();
     }
@@ -92,7 +128,26 @@ Singleton {
     // signals beat polling for both latency and cost. The polled values below
     // stay as the fallback.
     readonly property var bt: btLoader.status === Loader.Ready ? btLoader.item : null
-    readonly property bool btNative: bt !== null && bt.ok === true
+
+    /*
+     * --- the native backend drives only while it has an adapter
+     *
+     * This used to be true as soon as the module loaded, which meant every
+     * bluetooth reading came from bluez's default adapter - including on a
+     * machine that had none, where "no default adapter" was reported as
+     * unavailable and powered off, and the polled fallback was never consulted
+     * again.
+     *
+     * That is the state a dongle gets plugged into: bluez may hand the shell a
+     * default adapter promptly or not at all, and while it does not, the tile
+     * insisted bluetooth was off and unavailable while paired headphones
+     * reconnected to it happily. Requiring an adapter here means the poller -
+     * which reads the controller straight out of /sys and bluetoothctl every
+     * few seconds - takes over for exactly as long as the native path has
+     * nothing to say, so the tile agrees with the hardware either way.
+     */
+    readonly property bool btNative:
+        bt !== null && bt.ok === true && bt.available === true
 
     Loader {
         id: btLoader
@@ -111,20 +166,21 @@ Singleton {
     property string btNamePolled: ""
     property var btDevicesPolled: []
 
-    readonly property bool btAvailable: btNative ? bt.available : btAvailablePolled
+    readonly property bool btAvailable: btNative || btAvailablePolled
     readonly property bool btPowered: btNative ? bt.powered : btPoweredPolled
     readonly property int btCount: btNative ? bt.connectedCount : btCountPolled
     readonly property string btName: btNative ? bt.primaryName : btNamePolled
 
     readonly property string btLabel: {
-        if (!btAvailable) return "Unavailable";
-        if (!btPowered) return "Off";
+        if (!btAvailable) return Settings.t("No adapter");
+        if (!btPowered) return Settings.t("Off");
         if (btCount === 0) return "On";
         if (btCount === 1 && btName !== "") return btName;
         return `${btCount} connected`;
     }
 
     function toggleBluetooth() {
+        if (!btAvailable) return;
         if (btNative) {
             bt.setPowered(!btPowered);
             return;
@@ -251,6 +307,27 @@ Singleton {
     }
 
     function toggleBtScanning() { setBtScanning(!btScanning); }
+
+    /*
+     * Trust, which is what lets a device reconnect without being asked.
+     *
+     * Worth exposing separately from connecting: a controller that has to be
+     * woken by hand every time is usually one that was paired without ever
+     * being trusted, and there is otherwise nowhere in the shell to see that,
+     * let alone fix it.
+     */
+    function setDeviceTrusted(entry, on) {
+        if (!entry) return;
+        if (entry.handle) {
+            bt.setTrusted(entry.handle, on);
+            return;
+        }
+        const mac = entry.mac && entry.mac !== ""
+            ? entry.mac : macFromPath(entry.dbusPath);
+        if (mac === "") return;
+        Quickshell.execDetached(["bluetoothctl", on ? "trust" : "untrust", mac]);
+        refresh.restart();
+    }
 
     function forgetDevice(entry) {
         if (!entry) return;
@@ -439,6 +516,8 @@ Singleton {
                     root.netStrength = d.net.strength;
                     root.netConnected = d.net.connected;
                     root.wifiEnabled = d.net.wifiEnabled === true;
+                    root.wifiPresent = d.net.wifiPresent === true;
+                    root.netPresent = d.net.present === true;
                     root.accessPoints = d.net.aps || [];
                 }
                 if (d.bt) {

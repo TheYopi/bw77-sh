@@ -9,7 +9,7 @@ PaneScroll {
     SectionHeader {
         width: pane.innerWidth
         title: Settings.t("On-screen display")
-        subtitle: Settings.t("The overlay shown when volume or mute changes")
+        subtitle: Settings.t("The overlay shown for volume, brightness, media keys and lock keys")
     }
 
     SettingRow {
@@ -108,6 +108,25 @@ PaneScroll {
         CyberToggle {
             checked: Settings.osd.onMicMute
             onToggled: (v) => Settings.osd.onMicMute = v
+        }
+    }
+
+    SettingRow {
+        label: Settings.t("Brightness changes")
+        description: Settings.t("Sent by the compositor's key bindings over IPC. Each key keeps its own command and adds a call to: qs -c bw77-shell ipc call osd ...")
+        alternate: true
+        CyberToggle {
+            checked: Settings.osd.onBrightness
+            onToggled: (v) => Settings.osd.onBrightness = v
+        }
+    }
+
+    SettingRow {
+        label: Settings.t("Media keys are pressed")
+        description: Settings.t("Sent by the compositor's key bindings over IPC. Each key keeps its own command and adds a call to: qs -c bw77-shell ipc call osd ...")
+        CyberToggle {
+            checked: Settings.osd.onMedia
+            onToggled: (v) => Settings.osd.onMedia = v
         }
     }
 

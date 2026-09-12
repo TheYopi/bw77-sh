@@ -135,12 +135,16 @@ while :; do
 
   if [ "$first" -eq 0 ]; then
     printf '{"cpu":%d,"clock":%d,"temp":%d,"mem":%d,"memUsedKb":%d,"memTotalKb":%d,"swap":%d,"down":%d,"up":%d,"disk":%s,"load":%s}\n' \
-      "$cpu" "$clock" "$temp" "$mem_pct" "$mem_used_kb" "$mem_total_kb" "$swap_pct" "$dl" "$ul" "${disk:-0}" "${load:-0}"
+      "$cpu" "$clock" "$temp" "$mem_pct" "$mem_used_kb" "$mem_total_kb" "$swap_pct" "$dl" "$ul" "${disk:-0}" "${load:-0}" \
+      || exit 0
   fi
   first=0
 
   slow=$((slow - 1))
   [ "$slow" -le 0 ] && slow=$slow_every
 
+  # Gone with the shell. Quickshell ignores SIGPIPE and its children inherit
+  # that, so a failed write alone does not end an orphaned copy - see netbt.sh.
+  kill -0 "$PPID" 2>/dev/null || exit 0
   sleep "$interval"
 done
