@@ -154,6 +154,17 @@ WidgetFrame {
             rowSpacing: -Theme.space2
 
             GlitchText {
+                /*
+                 * The worst of the three clocks for this, because it never
+                 * goes away: a desktop widget sits on the wallpaper for the
+                 * whole session, so a scramble hung on the text changing ran
+                 * every minute - every SECOND with seconds switched on -
+                 * forever, with a 28ms repaint timer behind it. It resolves
+                 * out of noise once, when the widget is first drawn.
+                 */
+                decodeOnTextChange: false
+                Component.onCompleted: decodeTrigger++
+
                 text: root.timeText
                 role: "headline"
                 fontSize: root.timeSize

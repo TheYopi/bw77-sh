@@ -127,7 +127,7 @@ Item {
         color: root.active ? Theme.alpha(Theme.accent, 0.14)
             : (root.alternate ? Theme.alpha(Theme.bgDeep, 0.35) : "transparent")
 
-        Behavior on color { ColorAnimation { duration: Theme.durFast } }
+        Behavior on color { MotionColor {} }
     }
 
     // Left tick: full height, in accent, for both inputs.
@@ -138,7 +138,7 @@ Item {
         height: root.active ? parent.height : 0
         color: Theme.accent
 
-        Behavior on height { NumberAnimation { duration: Theme.durFast; easing.type: Theme.easeSnap } }
+        Behavior on height { MotionNumber { curve: Theme.curveEnter } }
     }
 
     // The label resolves out of noise when the surface opens, along with
@@ -157,7 +157,7 @@ Item {
         color: root.active ? Theme.text : Theme.textDim
         decodeTrigger: CcNav.revealNonce
 
-        Behavior on color { ColorAnimation { duration: Theme.durFast } }
+        Behavior on color { MotionColor {} }
     }
 
     Item {

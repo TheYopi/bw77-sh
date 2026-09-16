@@ -105,21 +105,25 @@ net_state() {
   # connection alone.
   local aps="" first=1
   if command -v nmcli >/dev/null 2>&1; then
+    # Split with `read` rather than four `cut` calls and two subshells per
+    # line. Twelve access points is twelve lines, and the old shape forked six
+    # processes for each of them - seventy-odd processes to format a list that
+    # is already in hand. IFS gives the same fields: the last variable keeps
+    # the remainder of the line with its colons, which is what -f4- did.
     local ap_line
     while IFS= read -r ap_line; do
       [ -n "$ap_line" ] || continue
-      local inuse ssid signal security
-      inuse=$(printf '%s' "$ap_line" | cut -d: -f1)
-      ssid=$(printf '%s' "$ap_line" | cut -d: -f2)
-      signal=$(printf '%s' "$ap_line" | cut -d: -f3)
-      security=$(printf '%s' "$ap_line" | cut -d: -f4-)
+      local inuse ssid signal security active secure
+      IFS=: read -r inuse ssid signal security <<< "$ap_line"
       [ -n "$ssid" ] || continue
+
+      case "$inuse" in '*') active=true ;; *) active=false ;; esac
+      case "$security" in '') secure=false ;; *) secure=true ;; esac
 
       [ "$first" -eq 0 ] && aps="$aps,"
       first=0
       aps="$aps{\"ssid\":\"$(json_escape "$ssid")\",\"signal\":${signal:-0}"
-      aps="$aps,\"active\":$([ "$inuse" = "*" ] && echo true || echo false)"
-      aps="$aps,\"secure\":$([ -n "$security" ] && echo true || echo false)}"
+      aps="$aps,\"active\":$active,\"secure\":$secure}"
     done <<< "$(nmcli -t -f IN-USE,SSID,SIGNAL,SECURITY device wifi list 2>/dev/null \
                 | sort -t: -k3 -rn | awk -F: '!seen[$2]++' | head -12)"
   fi
@@ -130,6 +134,21 @@ net_state() {
 }
 
 # ---- bluetooth
+#
+# --- one question per device, asked once
+#
+# Every fact about a device comes out of `bluetoothctl info`, and this used to
+# run it up to four times for each one: once to test whether it was connected,
+# again for its name, again for the listing's name, and a fourth time for the
+# listing's flags. With a dozen paired devices that is around fifty processes
+# spawned every five seconds for as long as the panel is open, each of them
+# waiting on bluetoothd for the same answer.
+#
+# It is now read once per device and everything is parsed out of that one copy,
+# with bash pattern matching rather than a `grep` per field - a `case` costs
+# nothing, a pipeline costs two processes. Connected count and the name shown
+# on the tile fall out of the same pass, so `devices Connected` is not needed
+# either.
 bt_state() {
   local available="false" powered="false" count=0 name=""
 
@@ -141,51 +160,51 @@ bt_state() {
   # off forever. The kernel exposes a controller under /sys/class/bluetooth the
   # moment one is plugged in, which is also how a dongle appearing later gets
   # noticed without restarting anything.
-  if [ -n "$(ls -A /sys/class/bluetooth 2>/dev/null)" ]; then
-    available="true"
-  elif command -v bluetoothctl >/dev/null 2>&1 \
-       && [ -n "$(btctl list 2>/dev/null)" ]; then
-    available="true"
-  fi
+  #
+  # A glob rather than `ls -A` in a substitution: the shell can see whether the
+  # directory has anything in it without starting a program to look.
+  local node
+  for node in /sys/class/bluetooth/*; do
+    [ -e "$node" ] && { available="true"; break; }
+  done
 
-  if [ "$available" = "true" ] && command -v bluetoothctl >/dev/null 2>&1; then
-    if btctl show 2>/dev/null | grep -q "Powered: yes"; then
-      powered="true"
-
-      # bluetoothctl gained "devices Connected" fairly recently; fall back to
-      # inspecting each known device when it is not supported.
-      local devs
-      devs=$(btctl devices Connected 2>/dev/null | grep -c '^Device ')
-      if [ "${devs:-0}" -gt 0 ]; then
-        count="$devs"
-        name=$(btctl devices Connected 2>/dev/null \
-               | head -1 | cut -d' ' -f3-)
-      else
-        local mac
-        for mac in $(btctl devices 2>/dev/null | awk '{print $2}'); do
-          if btctl info "$mac" 2>/dev/null | grep -q "Connected: yes"; then
-            count=$((count+1))
-            [ -z "$name" ] && name=$(btctl info "$mac" 2>/dev/null \
-                              | awk -F': ' '/Name:/{print $2; exit}')
-          fi
-        done
-      fi
-    fi
+  if [ "$available" = "false" ] && command -v bluetoothctl >/dev/null 2>&1 \
+     && [ -n "$(btctl list 2>/dev/null)" ]; then
+    available="true"
   fi
 
   # Known devices, connected first. Paired but disconnected devices are
   # included so they can be reconnected from the panel.
   local devs="" first=1
+
   if [ "$available" = "true" ] && command -v bluetoothctl >/dev/null 2>&1; then
-    local mac dname dconn
+    case "$(btctl show 2>/dev/null)" in
+      *"Powered: yes"*) powered="true" ;;
+    esac
+
+    local mac info line dname dconn dpair
     for mac in $(btctl devices 2>/dev/null | awk '{print $2}' | head -12); do
-      dname=$(btctl info "$mac" 2>/dev/null | awk -F': ' '/[ \t]Name:/{print $2; exit}')
-      [ -z "$dname" ] && dname="$mac"
-      local info
       info=$(btctl info "$mac" 2>/dev/null)
-      dconn=$(printf '%s' "$info" | grep -q "Connected: yes" && echo true || echo false)
-      local dpair
-      dpair=$(printf '%s' "$info" | grep -q "Paired: yes" && echo true || echo false)
+
+      # The name line is indented under the device heading, which is what the
+      # leading whitespace in the pattern is for - the heading itself carries
+      # the name too, unindented, and matching that first would pick up an
+      # alias the controller does not use.
+      dname=""
+      while IFS= read -r line; do
+        case "$line" in
+          *" Name: "*|*$'\t'"Name: "*) dname="${line#*Name: }"; break ;;
+        esac
+      done <<< "$info"
+      [ -z "$dname" ] && dname="$mac"
+
+      case "$info" in *"Connected: yes"*) dconn=true ;; *) dconn=false ;; esac
+      case "$info" in *"Paired: yes"*) dpair=true ;; *) dpair=false ;; esac
+
+      if [ "$dconn" = true ]; then
+        count=$((count+1))
+        [ -z "$name" ] && name="$dname"
+      fi
 
       [ "$first" -eq 0 ] && devs="$devs,"
       first=0
@@ -194,6 +213,9 @@ bt_state() {
     done
   fi
 
+  # The count is over the devices actually listed above. Anything past the cap
+  # is not shown in the panel either, so a badge counting it would be pointing
+  # at a row that is not there.
   printf '"bt":{"available":%s,"powered":%s,"count":%s,"name":"%s","devices":[%s]}' \
     "$available" "$powered" "$count" "$(json_escape "$name")" "$devs"
 }

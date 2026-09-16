@@ -32,7 +32,7 @@ BarItem {
             notchBottomRight: true
             notchBottomLeft: false
 
-            Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+            Behavior on fillColor { MotionColor {} }
         }
 
         Rectangle {
@@ -42,7 +42,7 @@ BarItem {
             rotation: 35
             color: (root.hovered || root.active) ? Theme.bgDeep : Theme.danger
 
-            Behavior on color { ColorAnimation { duration: Theme.durFast } }
+            Behavior on color { MotionColor {} }
         }
     }
 }

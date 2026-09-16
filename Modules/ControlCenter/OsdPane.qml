@@ -38,6 +38,9 @@ PaneScroll {
                 { value: "top-left",      label: Settings.t("Top left") },
                 { value: "top-center",    label: Settings.t("Top centre") },
                 { value: "top-right",     label: Settings.t("Top right") },
+                { value: "middle-left",   label: Settings.t("Middle left") },
+                { value: "middle-center", label: Settings.t("Middle centre") },
+                { value: "middle-right",  label: Settings.t("Middle right") },
                 { value: "bottom-left",   label: Settings.t("Bottom left") },
                 { value: "bottom-center", label: Settings.t("Bottom centre") },
                 { value: "bottom-right",  label: Settings.t("Bottom right") }

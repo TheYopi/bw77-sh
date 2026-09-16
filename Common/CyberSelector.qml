@@ -90,7 +90,7 @@ Item {
         strokeWidth: root.navFocused ? Theme.borderWidthStrong : Theme.borderWidth
         notch: Theme.notch
 
-        Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+        Behavior on strokeColor { MotionColor {} }
     }
 
     // Wheel and a click on the label both advance, so the arrows are a hint
@@ -243,8 +243,8 @@ Item {
                     height: 3
                     color: current ? root.accentColor : Theme.alpha(Theme.textMuted, 0.55)
 
-                    Behavior on width { NumberAnimation { duration: Theme.durFast } }
-                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on width { MotionNumber {} }
+                    Behavior on color { MotionColor {} }
                 }
             }
         }

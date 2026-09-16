@@ -45,6 +45,39 @@ Singleton {
         probe.running = true;
     }
 
+    /*
+     * --- polled only while something is looking
+     *
+     * The poll exists to catch changes made from outside the shell, and it used
+     * to run from startup to shutdown: a shell plus a brightnessctl forked
+     * every four seconds, twenty-odd thousand processes a day, for a number
+     * that is drawn by exactly two surfaces - the brightness slider and the
+     * OSD - neither of which is on screen for more than a few seconds at a
+     * time.
+     *
+     * So it is reference counted like SysMon and Locks. The slider takes a
+     * holder while it is built and gives it back when it is destroyed, which
+     * covers the case the poll was really for: the function keys being pressed
+     * while the panel is open, with the slider expected to follow.
+     *
+     * The OSD needs no holder. The keys reach the shell over IPC and that path
+     * calls refresh() before raising the OSD, so the level it shows is read
+     * fresh at the moment it appears rather than up to four seconds stale -
+     * which is better than anything the poll was providing.
+     */
+    property int watchers: 0
+
+    // Read once on the way in as well as on the timer: with no poll running
+    // while nothing was watching, the value in hand is as old as the last
+    // holder, and a slider that opens showing a level the backlight left
+    // behind ten minutes ago is worse than one that opens a frame late.
+    function acquire() {
+        watchers = watchers + 1;
+        if (watchers === 1) refresh();
+    }
+
+    function release() { watchers = Math.max(0, watchers - 1); }
+
     Process {
         id: probe
         running: true
@@ -88,9 +121,10 @@ Singleton {
         }
     }
 
-    // Re-read periodically so external changes (function keys) are reflected.
+    // Re-read periodically so external changes (function keys) are reflected
+    // for as long as anything is displaying them.
     Timer {
-        running: root.available && root.writable
+        running: root.watchers > 0 && root.available && root.writable
         interval: 4000
         repeat: true
         onTriggered: probe.running = true

@@ -114,7 +114,8 @@ BarItem {
             NumberAnimation {
                 properties: "x,y"
                 duration: Theme.durationFor("bar")
-                easing.type: Theme.curveFor("bar")
+                easing.type: Easing.Bezier
+                easing.bezierCurve: Theme.bezierFor("bar")
             }
         }
 
@@ -126,7 +127,8 @@ BarItem {
                 properties: "opacity"
                 from: 0; to: 1
                 duration: Theme.durationFor("bar")
-                easing.type: Theme.curveFor("bar")
+                easing.type: Easing.Bezier
+                easing.bezierCurve: Theme.bezierFor("bar")
             }
         }
 
@@ -152,10 +154,9 @@ BarItem {
 
                 Behavior on width {
                     enabled: Settings.animations.workspaceMorph
-                    NumberAnimation {
-                        duration: Theme.durationFor("bar")
-                        easing.type: Theme.curveFor("bar")
-                    }
+                    MotionNumber { duration: Theme.durationFor("bar")
+                        easing.type: Easing.Bezier
+                        easing.bezierCurve: Theme.bezierFor("bar") }
                 }
 
                 NotchRect {
@@ -179,16 +180,14 @@ BarItem {
                      * from the slide instead of one gesture.
                      */
                     Behavior on fillColor {
-                        ColorAnimation {
-                            duration: Theme.durationFor("bar")
-                            easing.type: Theme.curveFor("bar")
-                        }
+                        MotionColor { duration: Theme.durationFor("bar")
+                            easing.type: Easing.Bezier
+                            easing.bezierCurve: Theme.bezierFor("bar") }
                     }
                     Behavior on strokeColor {
-                        ColorAnimation {
-                            duration: Theme.durationFor("bar")
-                            easing.type: Theme.curveFor("bar")
-                        }
+                        MotionColor { duration: Theme.durationFor("bar")
+                            easing.type: Easing.Bezier
+                            easing.bezierCurve: Theme.bezierFor("bar") }
                     }
                 }
 

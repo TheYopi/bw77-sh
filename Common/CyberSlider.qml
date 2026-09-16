@@ -97,7 +97,7 @@ Item {
         strokeWidth: root.navFocused ? Theme.borderWidthStrong : Theme.borderWidth
         notch: Theme.notch
 
-        Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+        Behavior on strokeColor { MotionColor {} }
     }
 
     Item {
@@ -210,8 +210,8 @@ Item {
             strokeWidth: Theme.borderWidthStrong
             notch: 8
 
-            Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
-            Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+            Behavior on strokeColor { MotionColor {} }
+            Behavior on fillColor { MotionColor {} }
 
             // Not animated on x. The chip follows the pointer during a drag and
             // an easing curve there feels like lag rather than polish; keyboard

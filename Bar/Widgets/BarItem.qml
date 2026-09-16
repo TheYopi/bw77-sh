@@ -102,6 +102,14 @@ Item {
         anchors.topMargin: 4
         anchors.bottomMargin: 4
 
+        /*
+         * A widget that is not interactive accepts no buttons at all, so its
+         * MouseArea never reports a press and this stays dark - which is
+         * right: a clock that does nothing should not flash as though it had.
+         */
+        pressed: mouse.pressed
+        pressColor: root.accentColor
+
         // A widget can override the global setting. "inherit" follows it.
         readonly property string mode: {
             const own = (root.config && root.config.borderMode)
@@ -129,7 +137,7 @@ Item {
 
         Behavior on opacity {
             enabled: Settings.animations.barHover
-            NumberAnimation { duration: Theme.durFast }
+            MotionNumber {}
         }
 
         fillColor: Theme.alpha(root.frameColor, root.active ? 0.22 : 0.12)
@@ -141,7 +149,7 @@ Item {
         notchBottomRight: true
         notchBottomLeft: false
 
-        Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+        Behavior on fillColor { MotionColor {} }
     }
 
     // Full height, so text inside can align to the line box instead of being

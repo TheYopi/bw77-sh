@@ -39,6 +39,27 @@ Item {
     property int decodeTrigger: 0
     onDecodeTriggerChanged: if (decodeTrigger > 0) decode()
 
+    /*
+     * --- whether a change of TEXT re-runs the scramble
+     *
+     * Almost every label here is static - "TOP BAR" is "TOP BAR" - so hanging
+     * the effect on the text changing is a reasonable way to catch the moment
+     * a surface is built. It is exactly wrong for a label that updates by
+     * itself.
+     *
+     * The Quick Settings clock is a GlitchText, so it re-scrambled every time
+     * it ticked: once a minute normally, and with seconds switched on, once a
+     * second - against a 340ms decode, which is a third of the time spent
+     * resolving out of noise, permanently, for as long as the panel is open.
+     * That is the second animation on that surface, and it is not one anybody
+     * asked for. The lock screen clock did the same thing.
+     *
+     * So the two triggers are separated. A label that updates on its own turns
+     * this off and drives the effect from decodeTrigger instead, which fires
+     * when the surface it belongs to is revealed and at no other time.
+     */
+    property bool decodeOnTextChange: true
+
     // Overrides the size implied by `role`. Zero means "use the role's size".
     // This exists because GlitchText is an Item wrapping a Text rather than
     // being one, so it has no font group of its own to assign into.
@@ -88,7 +109,11 @@ Item {
         decodeAnim.restart();
     }
 
-    onTextChanged: decode()
+    onTextChanged: {
+        if (root.decodeOnTextChange) root.decode();
+        // Still has to be adopted, or the label keeps drawing the old string.
+        else root._shown = root.text;
+    }
 
     CyberText {
         id: main

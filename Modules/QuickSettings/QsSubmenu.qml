@@ -99,11 +99,11 @@ Item {
      */
     Behavior on height {
         enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-        NumberAnimation {
-            duration: Theme.durationFor("quickSettings")
-            easing.type: root.expanded
-                ? Theme.curveFor("quickSettings") : Easing.InOutCubic
-        }
+        MotionNumber { duration: root.expanded ? Theme.durationFor("quickSettings")
+                : Theme.exitDuration(Theme.durationFor("quickSettings"))
+            easing.type: Easing.Bezier
+            easing.bezierCurve: root.expanded
+                ? Theme.bezierFor("quickSettings") : Theme.curveExit }
     }
 
     /*
@@ -131,10 +131,9 @@ Item {
 
     Behavior on opacity {
         enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-        NumberAnimation {
-            duration: Math.round(Theme.durationFor("quickSettings") * 0.6)
-            easing.type: Easing.InQuad
-        }
+        MotionNumber { duration: Math.round(Theme.durationFor("quickSettings") * 0.6)
+            easing.type: Easing.Bezier
+            easing.bezierCurve: Theme.curveExit }
     }
 
     NotchRect {

@@ -31,8 +31,17 @@ Scope {
      */
     property string category: ""
 
+    /*
+     * Through Theme.exitDuration, not a copy of the number.
+     *
+     * This read `* 0.85` because that was GlitchBox's close fraction at the
+     * time. The exit is two thirds now, and a hold computed from a stale copy
+     * of someone else's constant is how the two drift apart again - which, when
+     * the hold is the SHORTER of the pair, means tearing the surface down
+     * mid-animation. Both sides now ask the same function.
+     */
     property int closeDuration: root.category !== ""
-        ? Math.round(Theme.durationFor(root.category) * 0.85) + 60
+        ? Theme.exitDuration(Theme.durationFor(root.category)) + 60
         : Theme.dur(200) + 60
 
     readonly property bool active: open || hold.running

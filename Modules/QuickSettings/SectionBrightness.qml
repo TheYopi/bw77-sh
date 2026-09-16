@@ -14,6 +14,12 @@ QsSection {
     id: root
     accentRole: "warn"
 
+    // Brightness polls only while something is displaying it - see the note in
+    // Services/Brightness. This is the surface the poll was written for: the
+    // function keys moving the backlight while the slider is on screen.
+    Component.onCompleted: Brightness.acquire()
+    Component.onDestruction: Brightness.release()
+
     Column {
         width: parent.width
         spacing: Theme.space2

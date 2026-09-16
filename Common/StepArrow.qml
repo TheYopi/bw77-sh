@@ -67,7 +67,7 @@ Item {
             // Small and quick to cross, so it wants the transition more than a
             // large target does - a bare colour swap on something this size
             // registers as a flicker rather than as a response.
-            Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+            Behavior on fillColor { MotionColor {} }
 
             startX: root.direction === "right" ? 0 : root.size
             startY: 0

@@ -139,7 +139,7 @@ Item {
                     color: winMouse.containsMouse
                         ? Theme.alpha(Theme.accent, 0.18) : "transparent"
 
-                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on color { MotionColor {} }
                 }
 
                 Row {
@@ -169,7 +169,7 @@ Item {
                         color: winMouse.containsMouse ? Theme.accent : Theme.text
                         elide: Text.ElideRight
 
-                        Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                        Behavior on color { MotionColor {} }
                     }
                 }
 
@@ -237,7 +237,7 @@ Item {
                     color: actMouse.containsMouse
                         ? Theme.alpha(Theme.accent, 0.18) : "transparent"
 
-                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on color { MotionColor {} }
                 }
 
                 Row {
@@ -265,7 +265,7 @@ Item {
                         color: actMouse.containsMouse ? Theme.accent : Theme.text
                         elide: Text.ElideRight
 
-                        Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                        Behavior on color { MotionColor {} }
                     }
                 }
 
@@ -320,7 +320,7 @@ Item {
                         ? Theme.alpha(modelData.danger ? Theme.danger : Theme.accent, 0.18)
                         : "transparent"
 
-                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on color { MotionColor {} }
                 }
 
                 Row {

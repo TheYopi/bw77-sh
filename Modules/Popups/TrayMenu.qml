@@ -91,7 +91,7 @@ Item {
                         notchBottomRight: true
                         notchBottomLeft: false
 
-                        Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+                        Behavior on opacity { MotionNumber {} }
                     }
 
                     Row {
@@ -139,7 +139,7 @@ Item {
                                 ? (entryMouse.containsMouse ? Theme.accent : Theme.text)
                                 : Theme.textMuted
 
-                            Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                            Behavior on color { MotionColor {} }
                         }
                     }
 
@@ -206,7 +206,7 @@ Item {
                                     notchBottomRight: true
                                     notchBottomLeft: false
 
-                                    Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+                                    Behavior on opacity { MotionNumber {} }
                                 }
 
                                 CyberText {
@@ -220,7 +220,7 @@ Item {
                                         ? (subMouse.containsMouse ? Theme.accent : Theme.textDim)
                                         : Theme.textMuted
 
-                                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                                    Behavior on color { MotionColor {} }
                                 }
 
                                 MouseArea {

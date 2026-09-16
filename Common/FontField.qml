@@ -55,7 +55,7 @@ Item {
         notchBottomLeft: false
         notchBottomRight: true
 
-        Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+        Behavior on strokeColor { MotionColor {} }
     }
 
     // Deliberately not a CyberText: this is the one label in the shell that

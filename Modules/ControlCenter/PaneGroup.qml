@@ -255,13 +255,12 @@ Column {
 
             Behavior on rotation {
                 enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-                NumberAnimation {
-                    duration: Theme.durFast
-                    easing.type: Theme.easeOut
-                }
+                MotionNumber { duration: Theme.durFast
+                    easing.type: Easing.Bezier
+                    easing.bezierCurve: Theme.curveEnter }
             }
 
-            Behavior on color { ColorAnimation { duration: Theme.durFast } }
+            Behavior on color { MotionColor {} }
         }
 
         MouseArea {
@@ -356,11 +355,11 @@ Column {
         // can now that there is no step waiting at the end of it.
         Behavior on height {
             enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-            NumberAnimation {
-                duration: Theme.durationFor("controlCenter")
-                easing.type: root.expanded
-                    ? Theme.curveFor("controlCenter") : Easing.InOutCubic
-            }
+            MotionNumber { duration: root.expanded ? Theme.durationFor("controlCenter")
+                    : Theme.exitDuration(Theme.durationFor("controlCenter"))
+                easing.type: Easing.Bezier
+                easing.bezierCurve: root.expanded
+                    ? Theme.bezierFor("controlCenter") : Theme.curveExit }
         }
 
         Column {

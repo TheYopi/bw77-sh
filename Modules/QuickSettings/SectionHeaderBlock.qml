@@ -19,6 +19,19 @@ QsSection {
             spacing: -2
 
             GlitchText {
+                /*
+                 * A clock updates itself, so the scramble is driven by the
+                 * surface appearing rather than by the text changing - see
+                 * GlitchText. Without this it re-resolved out of noise on
+                 * every tick: once a minute, or once a SECOND with seconds
+                 * switched on, against a 340ms decode.
+                 *
+                 * The surface is destroyed when it closes, so being built
+                 * is being opened and the trigger needs nothing to drive it.
+                 */
+                decodeOnTextChange: false
+                Component.onCompleted: decodeTrigger++
+
                 text: Qt.formatDateTime(clock.date,
                     Settings.quickSettings.showSeconds ? "HH:mm:ss" : "HH:mm")
                 role: "headline"

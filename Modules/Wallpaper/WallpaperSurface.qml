@@ -73,7 +73,7 @@ Item {
             }
         }
 
-        Behavior on color { ColorAnimation { duration: Theme.durSlow } }
+        Behavior on color { MotionColor { duration: Theme.durSlow } }
     }
 
     /*
@@ -164,7 +164,10 @@ Item {
      * shipped defaults do.
      */
     readonly property int swapDuration: Math.max(1, Theme.durationFor("wallpaper"))
-    readonly property int swapCurve: Theme.curveFor("wallpaper")
+    // A bezier now rather than an Easing enum - see the motion notes in Theme.
+    // A crossfade is an effect, not a movement, so the category curve is
+    // carried as control points and handed to every track of the swap.
+    readonly property var swapCurve: Theme.bezierFor("wallpaper")
 
     readonly property string swapDirection: Theme.directionFor("wallpaper")
 
@@ -202,19 +205,22 @@ Item {
                 target: outgoing; property: "opacity"
                 to: 0
                 duration: root.swapDuration
-                easing.type: root.swapCurve
+                easing.type: Easing.Bezier
+                easing.bezierCurve: root.swapCurve
             }
             NumberAnimation {
                 target: outShift; property: "x"
                 to: root.swapOffsetX
                 duration: root.swapDuration
-                easing.type: root.swapCurve
+                easing.type: Easing.Bezier
+                easing.bezierCurve: root.swapCurve
             }
             NumberAnimation {
                 target: outShift; property: "y"
                 to: root.swapOffsetY
                 duration: root.swapDuration
-                easing.type: root.swapCurve
+                easing.type: Easing.Bezier
+                easing.bezierCurve: root.swapCurve
             }
         }
         ScriptAction {
@@ -240,19 +246,22 @@ Item {
                 target: outgoing; property: "opacity"
                 to: 0
                 duration: Math.max(1, root.swapDuration * 0.45)
-                easing.type: root.swapCurve
+                easing.type: Easing.Bezier
+                easing.bezierCurve: root.swapCurve
             }
             NumberAnimation {
                 target: outShift; property: "x"
                 to: root.swapOffsetX
                 duration: Math.max(1, root.swapDuration * 0.45)
-                easing.type: root.swapCurve
+                easing.type: Easing.Bezier
+                easing.bezierCurve: root.swapCurve
             }
             NumberAnimation {
                 target: outShift; property: "y"
                 to: root.swapOffsetY
                 duration: Math.max(1, root.swapDuration * 0.45)
-                easing.type: root.swapCurve
+                easing.type: Easing.Bezier
+                easing.bezierCurve: root.swapCurve
             }
         }
         ScriptAction {
@@ -297,7 +306,8 @@ Item {
                         from: (Math.random() - 0.5) * 80
                         to: 0
                         duration: Math.max(1, root.swapDuration * 0.3)
-                        easing.type: root.swapCurve
+                        easing.type: Easing.Bezier
+                easing.bezierCurve: root.swapCurve
                     }
                 }
             }

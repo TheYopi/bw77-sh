@@ -86,12 +86,33 @@ PanelWindow {
         // way it travels: "right" begins right of its resting place and moves
         // left, which is a drawer entering from the right edge. So the panel
         // names the edge it is docked to.
-        autoDirection: root.onRight ? "right" : "left"
-        travel: sheet.width
+        // Its own docked edge, unless Position says otherwise.
+        autoDirection: Theme.originOr("quickSettings",
+                                      root.onRight ? "right" : "left")
+        /*
+         * No travel of its own any more.
+         *
+         * This used to hand over `sheet.width`, which is derived from the
+         * window's width - and a layer surface has no width until the
+         * compositor configures it, which lands after this animation has
+         * captured where to start from. The entry ran against a negative
+         * distance and played backwards by sixteen pixels.
+         *
+         * GlitchBox measures the distance to the edge itself now, and waits
+         * for a geometry before it starts rather than trusting whatever is
+         * there on the first frame. For this panel that works out to exactly
+         * the sheet's width - which is what the hand-written version was
+         * trying to say - without a surface-specific guess at what the width
+         * will turn out to be.
+         */
 
         Item {
             id: sheet
-            width: Math.min(Settings.quickSettings.width, root.width - Theme.space4)
+            // Floored at zero: before the compositor has sized the window this
+            // is `0 - space4`, and a negative width is not a smaller panel, it
+            // is a broken one - see the note on `travel` above.
+            width: Math.min(Settings.quickSettings.width,
+                            Math.max(0, root.width - Theme.space4))
             height: root.height
             x: root.onRight ? root.width - width : 0
 

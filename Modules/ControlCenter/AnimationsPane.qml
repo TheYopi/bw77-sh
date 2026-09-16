@@ -46,7 +46,7 @@ PaneScroll {
     Repeater {
         model: [
             { key: "surfaceOpen", label: Settings.t("Surface open"),
-              hint: "Panels and popups scale in when they appear" },
+              hint: "Panels and popups move into place from the edge they sit on" },
             { key: "textDecode", label: Settings.t("Text decode"),
               hint: "Characters scramble before settling when a value changes" },
             { key: "workspaceMorph", label: Settings.t("Workspace pips"),
@@ -174,21 +174,38 @@ PaneScroll {
             SettingRow {
                 width: pane.innerWidth
                 label: Settings.t("Curve")
+                description: Settings.t("Where in the movement the time is spent")
                 CyberSelector {
-                    options: Theme.curveNames.map(c => ({ v: c, l: c }))
-                    current: Theme.motionOf(cat.key, "curve")
+                    options: Theme.curveNames.map(c => ({ v: c, l: Settings.t(c) }))
+                    // Through curveCanonical, so a category still carrying an
+                    // older curve name shows the option it now maps to instead
+                    // of coming up blank.
+                    current: Theme.curveCanonical(Theme.motionOf(cat.key, "curve"))
                     onPicked: (v) => Settings.setMotion(cat.key, "curve", v)
                 }
             }
 
             SettingRow {
                 width: pane.innerWidth
-                label: Settings.t("Direction")
-                description: Settings.t("Auto follows the edge the surface opens from")
+                label: Settings.t("Position")
+                description: Settings.t("Which edge it comes from. Auto follows whatever opens it")
+                CyberSelector {
+                    options: Theme.originNames.map(o => ({ v: o, l: Settings.t(o) }))
+                    current: Theme.originNames.indexOf(
+                                 Theme.motionOf(cat.key, "origin")) !== -1
+                        ? Theme.motionOf(cat.key, "origin") : "auto"
+                    onPicked: (v) => Settings.setMotion(cat.key, "origin", v)
+                }
+            }
+
+            SettingRow {
+                width: pane.innerWidth
+                label: Settings.t("Entry")
+                description: Settings.t("How it arrives once it knows where from")
                 alternate: true
                 CyberSelector {
-                    options: Theme.directionNames.map(d => ({ v: d, l: Settings.t(d) }))
-                    current: Theme.motionOf(cat.key, "direction")
+                    options: Theme.entryStyles.map(d => ({ v: d, l: Settings.t(d) }))
+                    current: Theme.entryCanonical(Theme.motionOf(cat.key, "direction"))
                     onPicked: (v) => Settings.setMotion(cat.key, "direction", v)
                 }
             }

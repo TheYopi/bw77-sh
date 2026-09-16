@@ -172,10 +172,10 @@ QsSection {
                     // over the same span the card itself fades out.
                     Behavior on height {
                         enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-                        NumberAnimation {
-                            duration: Theme.durationFor("quickSettings")
-                            easing.type: Theme.curveFor("quickSettings")
-                        }
+                        MotionNumber { duration: groupCol.expanded ? Theme.durationFor("quickSettings")
+                                : Theme.exitDuration(Theme.durationFor("quickSettings"))
+                            easing.type: Easing.Bezier
+                            easing.bezierCurve: Theme.bezierFor("quickSettings") }
                     }
 
                     NotchRect {
@@ -196,7 +196,7 @@ QsSection {
 
                         Behavior on opacity {
                             enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-                            NumberAnimation { duration: Theme.durationFor("quickSettings") }
+                            MotionNumber { duration: Theme.durationFor("quickSettings") }
                         }
                     }
 
@@ -317,7 +317,7 @@ QsSection {
                                             ? Theme.danger : Theme.alpha(Theme.danger, 0.55)
 
                                         Behavior on color {
-                                            ColorAnimation { duration: Theme.durFast }
+                                            MotionColor {}
                                         }
 
                                         MouseArea {
@@ -399,11 +399,10 @@ QsSection {
                     Behavior on height {
                         enabled: groupCol.foldArmed && !groupCol.rowTearing
                             && !Theme.reducedMotion && Settings.animations.surfaceOpen
-                        NumberAnimation {
-                            duration: Theme.durationFor("quickSettings")
-                            easing.type: groupCol.expanded
-                                ? Theme.curveFor("quickSettings") : Easing.InOutCubic
-                        }
+                        MotionNumber { duration: Theme.durationFor("quickSettings")
+                            easing.type: Easing.Bezier
+                            easing.bezierCurve: groupCol.expanded
+                                ? Theme.bezierFor("quickSettings") : Theme.curveExit }
                     }
 
                     Column {
@@ -501,7 +500,7 @@ QsSection {
                                     role: "micro"
                                     color: oneMouse.containsMouse ? Theme.danger : Theme.textMuted
 
-                                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                                    Behavior on color { MotionColor {} }
 
                                     MouseArea {
                                         id: oneMouse

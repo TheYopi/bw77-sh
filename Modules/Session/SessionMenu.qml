@@ -54,6 +54,10 @@ PanelWindow {
 
     GlitchBox {
         category: "menus"
+        // Centred, so it inherits the edge of whatever opened it -
+        // the dock, or the bar when there is no dock. Position under
+        // Motion by category overrides it.
+        autoDirection: Theme.originOf("menus", "dock")
         id: surfaceAnim
         anchors.fill: parent
         shown: Shell.sessionOpen
@@ -123,7 +127,7 @@ PanelWindow {
                             notchBottomRight: true
                             notchBottomLeft: false
 
-                            Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+                            Behavior on fillColor { MotionColor {} }
                         }
 
                         Column {

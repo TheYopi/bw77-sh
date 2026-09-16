@@ -129,6 +129,10 @@ PanelWindow {
 
     GlitchBox {
         category: "theme"
+        // Centred, so it inherits the edge of whatever opened it -
+        // the dock, or the bar when there is no dock. Position under
+        // Motion by category overrides it.
+        autoDirection: Theme.originOf("theme", "dock")
         anchors.fill: parent
         shown: Shell.themeMenuOpen
 

@@ -43,6 +43,16 @@ WlSessionLock {
             spacing: Theme.space6
 
             GlitchText {
+                /*
+                 * Same as the Quick Settings clock: driven by the surface
+                 * appearing rather than by the text changing, or it resolves
+                 * out of noise on every tick. This one is worse than that one -
+                 * the lock surface is not destroyed while it is up, so the
+                 * scramble ran for as long as the screen stayed locked.
+                 */
+                decodeOnTextChange: false
+                Component.onCompleted: decodeTrigger++
+
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: Qt.formatDateTime(clock.date, Settings.lock.clockFormat)
                 role: "headline"
@@ -133,7 +143,11 @@ WlSessionLock {
                 } else {
                     lock.errorText = "Incorrect password. Try again.";
                     password.text = "";
-                    shake.start();
+                    // Guarded here rather than inside the animation: start()
+                    // on a SequentialAnimation runs it regardless of what its
+                    // tracks say, and this was the one piece of motion in the
+                    // shell that Reduce Motion did not switch off.
+                    if (!Theme.reducedMotion) shake.start();
                 }
             }
         }
@@ -141,9 +155,12 @@ WlSessionLock {
         SequentialAnimation {
             id: shake
             loops: 2
-            NumberAnimation { target: surface; property: "x"; to: 6; duration: 40 }
-            NumberAnimation { target: surface; property: "x"; to: -6; duration: 40 }
-            NumberAnimation { target: surface; property: "x"; to: 0; duration: 40 }
+            // Through Theme.dur, so the animation-speed slider reaches this
+            // like it reaches everything else. Deliberately not eased: a
+            // rejection is not a transition, it is a mechanism refusing.
+            NumberAnimation { target: surface; property: "x"; to: 6; duration: Theme.dur(40) }
+            NumberAnimation { target: surface; property: "x"; to: -6; duration: Theme.dur(40) }
+            NumberAnimation { target: surface; property: "x"; to: 0; duration: Theme.dur(40) }
         }
     }
 }

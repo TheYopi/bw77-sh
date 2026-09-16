@@ -113,7 +113,109 @@ Variants {
             win.vertical ? tooltipSpace + Theme.space2 + 8 : 60
         readonly property int windowThickness: thickness + win.edgeMargin + popupReserve
 
-        property bool revealed: !hides
+        /*
+         * --- hiding, and coming back
+         *
+         * The slide-out was implemented and the slide-back was not: `revealed`
+         * was declared, read by the offset below, and never written by
+         * anything. So a hiding dock left its hot edge on screen and there was
+         * no way to bring it back - which is exactly what it looked like, a few
+         * pixels at the bottom of the screen that did nothing.
+         *
+         * What holds it open is deliberately broader than "the cursor is over
+         * the dock". An icon's own MouseArea reports hover separately, and a
+         * context menu is a different surface entirely - the dock must not
+         * slide out from under a menu that is still open - so all three count.
+         *
+         * Only the menu belonging to THIS display holds THIS dock open, or
+         * right-clicking an icon on one monitor would pin the dock open on
+         * every other one.
+         */
+        property bool revealed: !win.hides
+
+        readonly property bool pointerHeld:
+            hotHover.hovered
+            || dockBody.hoveredIndex >= 0
+            || (DockMenuState.open && DockMenuState.screenRef === win.modelData)
+
+        function syncReveal() {
+            if (!win.hides) {
+                hideTimer.stop();
+                win.revealed = true;
+                return;
+            }
+            if (win.pointerHeld) {
+                hideTimer.stop();
+                win.revealed = true;
+            } else {
+                // Delayed rather than immediate: crossing the dock on the way
+                // somewhere else should not make it disappear before the
+                // cursor has finished passing over it.
+                hideTimer.restart();
+            }
+        }
+
+        onPointerHeldChanged: win.syncReveal()
+        // Switching to "Always visible" has to restore it, since the binding
+        // that used to do that is replaced the first time this is assigned.
+        onHidesChanged: win.syncReveal()
+
+        Timer {
+            id: hideTimer
+            interval: Math.max(0, Settings.dock.hideDelay)
+            onTriggered: if (win.hides && !win.pointerHeld) win.revealed = false
+        }
+
+        /*
+         * --- what the cursor actually has to hit
+         *
+         * The dock body is the wrong shape for this. When hidden it is mostly
+         * off the surface and only the hot edge is reachable, which is fine -
+         * but when revealed it sits `edgeMargin` away from the screen edge, and
+         * the strip of desktop in that gap is not part of it. A cursor resting
+         * at the very edge of the screen would therefore be outside the dock,
+         * hiding it, which puts the cursor back on the hot edge, which reveals
+         * it again: the dock flickers in and out under a stationary pointer.
+         *
+         * So the hover region is the dock stretched out to the screen edge. It
+         * is the hot edge exactly when hidden - the dock body IS the strip then
+         * - and the dock plus its gap when revealed, with no discontinuity
+         * between the two for the pointer to fall into.
+         *
+         * Declared before the dock body so it sits underneath it, and a
+         * HoverHandler rather than a MouseArea so it reports the cursor without
+         * taking clicks off the icons above it.
+         */
+        Item {
+            id: hotZone
+
+            /*
+             * The edge it reaches is the dock's edge, not the screen's.
+             *
+             * With a bar on the same side the dock rests `barClearance` short
+             * of the screen edge, and a region that ran all the way down would
+             * cover the bar - so the hot edge would be a strip of mask sitting
+             * on top of the bar's buttons, eating clicks meant for them. It
+             * stops where the dock stops. barClearance is zero for a vertical
+             * dock, since the bar only ever takes the top or the bottom.
+             */
+            x: Settings.dock.position === "left" ? win.barClearance : dockBody.x
+            y: Settings.dock.position === "top" ? win.barClearance : dockBody.y
+
+            width: win.vertical
+                ? (Settings.dock.position === "left"
+                    ? dockBody.x + dockBody.width - win.barClearance
+                    : win.width - win.barClearance - dockBody.x)
+                : dockBody.width
+
+            height: win.vertical
+                ? dockBody.height
+                : (Settings.dock.position === "top"
+                    ? dockBody.y + dockBody.height - win.barClearance
+                    : win.height - win.barClearance - dockBody.y)
+
+            HoverHandler { id: hotHover }
+        }
 
         screen: modelData
         color: "transparent"
@@ -184,10 +286,20 @@ Variants {
             return out;
         }
 
-        // Input lands on the dock and nowhere else. The context menu is drawn
-        // by its own surface now, so there is no oversized catcher around the
-        // dock swallowing clicks.
-        mask: Region { item: dockBody }
+        /*
+         * Input lands on the dock and nowhere else. The context menu is drawn
+         * by its own surface now, so there is no oversized catcher around the
+         * dock swallowing clicks.
+         *
+         * A hiding dock masks the hover region instead. The mask is the only
+         * thing the compositor will deliver a pointer event through, so a
+         * region covering just the dock body means the hot edge is drawn but
+         * never hovered - the reveal could not fire no matter what listened for
+         * it. The extra area is the gap between a revealed dock and the screen
+         * edge, which is `edgeMargin` of desktop; that strip stops taking
+         * clicks again the moment the dock hides.
+         */
+        mask: Region { item: win.hides ? hotZone : dockBody }
 
         /*
          * Where a run of `len` sits inside `span` for the current alignment.
@@ -244,7 +356,7 @@ Variants {
              */
             readonly property real acrossOffset: win.revealed
                 ? win.edgeMargin
-                : -(win.bodyThickness - Settings.dock.revealSize)
+                : win.barClearance - (win.bodyThickness - Settings.dock.revealSize)
 
             x: win.vertical
                 ? (Settings.dock.position === "left"
@@ -262,16 +374,14 @@ Variants {
             // the global durNormal - otherwise Motion by category > Dock moved
             // the dock's menu and its icons but left the dock itself alone.
             Behavior on x {
-                NumberAnimation {
-                    duration: Theme.durationFor("dock")
-                    easing.type: Theme.curveFor("dock")
-                }
+                MotionNumber { duration: Theme.durationFor("dock")
+                    easing.type: Easing.Bezier
+                    easing.bezierCurve: Theme.bezierFor("dock") }
             }
             Behavior on y {
-                NumberAnimation {
-                    duration: Theme.durationFor("dock")
-                    easing.type: Theme.curveFor("dock")
-                }
+                MotionNumber { duration: Theme.durationFor("dock")
+                    easing.type: Easing.Bezier
+                    easing.bezierCurve: Theme.bezierFor("dock") }
             }
 
             NotchRect {

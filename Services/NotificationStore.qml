@@ -50,7 +50,15 @@ Singleton {
 
         // <br> is not in the spec but is sent widely enough to be worth
         // honouring, and a line break carries meaning the tag soup does not.
-        out = out.replace(/<br\s*\/?>/gi, "\n");
+        out = out.replace(/<\s*br\s*\/?\s*>/gi, "\n");
+
+        // "</br>" is not valid anywhere, but senders that build their markup by
+        // pairing tags emit it anyway - Telegram puts "<br></br>" in a summary.
+        // It is the closing half of a break that has already been honoured
+        // above, so it carries nothing and is dropped rather than turned into a
+        // second newline. Matched separately because the pattern above will not
+        // take a slash before the tag name.
+        out = out.replace(/<\s*\/\s*br\s*>/gi, "");
 
         // An image is not drawable here, but its alt text is what the sender
         // wanted read out when it was not.

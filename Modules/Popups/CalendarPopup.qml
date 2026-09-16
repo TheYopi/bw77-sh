@@ -86,7 +86,7 @@ Item {
                 role: "icon"
                 color: prevMouse.containsMouse ? Theme.accent : Theme.textDim
 
-                Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                Behavior on color { MotionColor {} }
                 MouseArea {
                     id: prevMouse
                     anchors.fill: parent
@@ -121,7 +121,7 @@ Item {
                 role: "icon"
                 color: nextMouse.containsMouse ? Theme.accent : Theme.textDim
 
-                Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                Behavior on color { MotionColor {} }
                 MouseArea {
                     id: nextMouse
                     anchors.fill: parent
@@ -157,13 +157,15 @@ Item {
                         target: grid; property: "opacity"
                         from: 0; to: 1
                         duration: Theme.durationFor("menus")
-                        easing.type: Theme.curveFor("menus")
+                        easing.type: Easing.Bezier
+                        easing.bezierCurve: Theme.bezierFor("menus")
                     }
                     NumberAnimation {
                         target: gridShift; property: "x"
                         from: root.lastShift * 14; to: 0
                         duration: Theme.durationFor("menus")
-                        easing.type: Theme.curveFor("menus")
+                        easing.type: Easing.Bezier
+                        easing.bezierCurve: Theme.bezierFor("menus")
                     }
                 }
 

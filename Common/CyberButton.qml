@@ -38,6 +38,11 @@ Item {
 
     NotchRect {
         anchors.fill: parent
+
+        // The shell's press feedback lives in NotchRect - see the note there.
+        pressed: mouse.pressed
+        pressColor: root._accent
+
         fillColor: root._selected ? root._accent
             : (root._hovered ? Theme.alpha(root._accent, 0.18)
                              : Theme.alpha(Theme.bgRaised, 0.85))
@@ -50,8 +55,8 @@ Item {
         notchBottomRight: true
         notchBottomLeft: false
 
-        Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
-        Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+        Behavior on fillColor { MotionColor {} }
+        Behavior on strokeColor { MotionColor {} }
     }
 
     Row {
@@ -66,7 +71,7 @@ Item {
             role: "icon"
             color: root._selected ? Theme.textOnAccent : root._accent
             anchors.verticalCenter: parent.verticalCenter
-            Behavior on color { ColorAnimation { duration: Theme.durFast } }
+            Behavior on color { MotionColor {} }
         }
 
         CyberText {
@@ -76,7 +81,7 @@ Item {
             color: root._selected ? Theme.textOnAccent
                 : (root._hovered ? root._accent : Theme.text)
             anchors.verticalCenter: parent.verticalCenter
-            Behavior on color { ColorAnimation { duration: Theme.durFast } }
+            Behavior on color { MotionColor {} }
         }
 
         // In the Row, not anchored over it: anchoring the chip to the right

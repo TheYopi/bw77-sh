@@ -22,7 +22,9 @@ Item {
     property real shown: value
     Behavior on shown {
         enabled: !Theme.reducedMotion && root.smooth_
-        NumberAnimation { duration: root.smoothing; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: root.smoothing
+            easing.type: Easing.Bezier
+            easing.bezierCurve: Theme.curveEnter }
     }
 
     property bool smooth_: true

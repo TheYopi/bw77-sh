@@ -40,6 +40,120 @@ Item {
     property color innerStrokeColor: Theme.alpha(strokeColor, 0.35)
     property real innerStrokeInset: 3
 
+    /*
+     * ---------------------------------------------------------------- press
+     *
+     * Bind `pressed` to a MouseArea's and the shape acknowledges the click.
+     *
+     * It lives here rather than in each control because the shell had no press
+     * feedback at all - not on buttons, bar widgets, quick settings tiles, dock
+     * icons or selectors. Only a slider handle and one stepper arrow reacted to
+     * being pressed. Everything else gave nothing back between the button going
+     * down and whatever it opened appearing, which on anything slow to respond
+     * is indistinguishable from the click having missed.
+     *
+     * Material draws this as a state layer: a wash of the accent over the
+     * container at a fixed opacity, rather than each control inventing its own
+     * pressed colour. That part is taken as-is, and it composites into the
+     * painted fill rather than sitting on top as another item, so it follows
+     * the notched silhouette exactly instead of squaring off the cut corner.
+     *
+     * What is not taken is the ripple. It is a touch idiom - it exists to show
+     * WHERE a finger landed, which a pointer already knows - and an expanding
+     * circle is the wrong vocabulary for a shell drawn in straight lines. The
+     * whole shape lights instead.
+     *
+     * --- the attack is not the decay
+     *
+     * 40ms in, 120ms out. A contact closes at once and opens gently, and the
+     * asymmetry is most of what makes this read as a switch rather than a
+     * highlight. Reading `pressed` inside the Behavior is safe rather than
+     * racy: syncPress() below assigns pressWash from the very handler that
+     * observes `pressed`, so the flag is always already correct by the time
+     * the animation starts.
+     *
+     * --- and it cannot be too quick to see
+     *
+     * A fast click can release inside a single frame, and without a floor the
+     * wash would be applied and removed before the compositor drew either -
+     * so the control that was clicked most decisively would be the one that
+     * appeared not to react. The press is held for a minimum, exactly as
+     * Material holds its ripple, and only then allowed to decay.
+     */
+    property bool pressed: false
+    property color pressColor: Theme.accent
+
+    property real pressWash: 0
+
+    function syncPress() {
+        if (root.pressed) {
+            pressMin.restart();
+            root.pressWash = Theme.statePressed;
+        } else if (!pressMin.running) {
+            root.pressWash = 0;
+        }
+    }
+
+    onPressedChanged: root.syncPress()
+
+    Timer {
+        id: pressMin
+        interval: 90
+        onTriggered: root.syncPress()
+    }
+
+    Behavior on pressWash {
+        MotionNumber { duration: root.pressed ? Theme.dur(40) : Theme.durState }
+    }
+
+    /*
+     * --- one alpha does not fit every accent
+     *
+     * Material specifies its state layers as a flat opacity, which works
+     * because Material's palettes are generated to a tonal scale. This shell
+     * lets a palette name any colour it likes, and a flat alpha then lands
+     * very differently depending on which one: the default cyan lifts a
+     * pressed control by 27 points of luminance, while the danger red lifts it
+     * by 6 - because red carries about a fifth of the luminance weight that
+     * cyan does. Destructive buttons and red-tinted tiles, which are the ones
+     * you most want confirmation from, were the ones that barely reacted.
+     *
+     * So the wash is scaled by how little luminance the accent brings. A
+     * bright accent passes through at its stated opacity; a dark one gets more
+     * of itself, up to two and a half times, which is what it takes for red to
+     * register as a press at all. Clamped at the bottom so a near-white accent
+     * is not thinned into nothing.
+     */
+    readonly property real pressGain: {
+        const l = 0.2126 * root.pressColor.r
+                + 0.7152 * root.pressColor.g
+                + 0.0722 * root.pressColor.b;
+        return Math.max(1.0, Math.min(2.5, 0.75 / Math.max(0.05, l)));
+    }
+
+    // Composited rather than overlaid - see above. Qt.tint puts the wash over
+    // the fill at its own alpha, which is precisely the state-layer model.
+    readonly property color paintedFill: root.pressWash > 0
+        ? Qt.tint(root.fillColor,
+                  Theme.alpha(root.pressColor,
+                              Math.min(1, root.pressWash * root.pressGain)))
+        : root.fillColor
+
+    /*
+     * The outline takes the wash too, and harder.
+     *
+     * Material puts its state layer on the container's surface, because a
+     * Material control IS a surface. These are line drawings: the outline is
+     * what defines the control, so leaving it out of the press would light the
+     * inside of a shape whose edge had not moved. At double weight the edge
+     * leads and the fill follows it.
+     */
+    readonly property color paintedStroke: root.pressWash > 0
+        ? Qt.tint(root.strokeColor,
+                  Theme.alpha(root.pressColor,
+                              Math.min(1, root.pressWash * root.pressGain * 2)))
+        : root.strokeColor
+
     implicitWidth: 100
     implicitHeight: 40
 
@@ -51,8 +165,8 @@ Item {
         // --- outer outline: fill plus the primary stroke
         ShapePath {
             id: outer
-            fillColor: root.fillColor
-            strokeColor: root.strokeColor
+            fillColor: root.paintedFill
+            strokeColor: root.paintedStroke
             strokeWidth: root.strokeWidth
             joinStyle: ShapePath.MiterJoin
             capStyle: ShapePath.FlatCap

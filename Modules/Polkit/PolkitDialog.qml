@@ -78,6 +78,10 @@ PanelWindow {
 
     GlitchBox {
         category: "menus"
+        // Centred, so it inherits the edge of whatever opened it -
+        // the dock, or the bar when there is no dock. Position under
+        // Motion by category overrides it.
+        autoDirection: Theme.originOf("menus", "dock")
         anchors.fill: parent
         shown: Polkit.active
 
@@ -203,7 +207,7 @@ PanelWindow {
                         : (input.activeFocus ? Theme.accent : Theme.border)
                     notch: Theme.notchSmall
 
-                    Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on strokeColor { MotionColor {} }
 
                     CyberText {
                         id: promptGlyph

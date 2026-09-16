@@ -34,6 +34,6 @@ BarItem {
         color: root.active ? Theme.accent
             : (root.hovered ? Theme.accent : root.cfgColor(Theme.textDim))
 
-        Behavior on color { ColorAnimation { duration: Theme.durFast } }
+        Behavior on color { MotionColor {} }
     }
 }

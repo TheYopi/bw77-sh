@@ -291,7 +291,7 @@ Item {
                     strokeWidth: parent.current ? 2 : 1
                     notch: Theme.notchSmall
 
-                    Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on strokeColor { MotionColor {} }
                 }
 
                 Rectangle {
@@ -305,7 +305,7 @@ Item {
                     opacity: thumbMouse.containsMouse || parent.current ? 1 : 0
                     visible: opacity > 0.01
 
-                    Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+                    Behavior on opacity { MotionNumber {} }
 
                     CyberText {
                         anchors.fill: parent

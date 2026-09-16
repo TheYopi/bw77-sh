@@ -41,7 +41,7 @@ Item {
 
     opacity: enabled ? 1 : 0.35
 
-    Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+    Behavior on opacity { MotionNumber {} }
 
     CyberText {
         id: caption
@@ -57,7 +57,7 @@ Item {
         role: "micro"
         color: root.focused ? root.accentColor : Theme.textMuted
 
-        Behavior on color { ColorAnimation { duration: Theme.durFast } }
+        Behavior on color { MotionColor {} }
     }
 
     CyberSelector {

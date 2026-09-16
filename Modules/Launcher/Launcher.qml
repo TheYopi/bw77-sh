@@ -220,6 +220,20 @@ PanelWindow {
         anchors.fill: parent
         shown: Shell.launcherOpen
 
+        /*
+         * Out of the dock that opened it.
+         *
+         * The launcher has no placement worth inheriting - it is centred, or
+         * pinned to the top - so where it sits says nothing about where it
+         * should come from. What it has is the button that summoned it, which
+         * lives on the dock. A dock along the bottom throws it up; a dock down
+         * the left throws it out to the right.
+         *
+         * Position under Motion by category overrides this; on Auto it follows
+         * the dock, and falls back to the bar when there is no dock to follow.
+         */
+        autoDirection: Theme.originOf("launcher", "dock")
+
         Panel {
             id: card
 
@@ -285,14 +299,13 @@ PanelWindow {
 
                 Behavior on height {
                     enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-                    NumberAnimation {
-                        duration: Theme.durFast
-                        easing.type: Theme.easeSnap
-                    }
+                    MotionNumber { duration: Theme.durFast
+                        easing.type: Easing.Bezier
+                        easing.bezierCurve: Theme.curveEnter }
                 }
                 Behavior on opacity {
                     enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-                    NumberAnimation { duration: Theme.durFast }
+                    MotionNumber {}
                 }
 
                 NotchRect {
@@ -305,7 +318,7 @@ PanelWindow {
                     notchBottomRight: true
                     notchBottomLeft: false
 
-                    Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on strokeColor { MotionColor {} }
                 }
 
                 CyberText {
@@ -434,8 +447,8 @@ PanelWindow {
                             // Both, not just the fill: the outline appearing on
                             // the same frame the wash starts fading in is what
                             // made picking a category feel like a hard cut.
-                            Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
-                            Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                            Behavior on fillColor { MotionColor {} }
+                            Behavior on strokeColor { MotionColor {} }
                         }
 
                         CyberText {
@@ -447,7 +460,7 @@ PanelWindow {
                             color: catItem.current ? Theme.danger
                                 : (catMouse.containsMouse ? Theme.accent : Theme.textDim)
 
-                            Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                            Behavior on color { MotionColor {} }
                         }
 
                         MouseArea {
@@ -511,8 +524,8 @@ PanelWindow {
                          * turns that into one continuous movement, and at the
                          * hover speed it still keeps up with the key repeat.
                          */
-                        Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
-                        Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                        Behavior on fillColor { MotionColor {} }
+                        Behavior on strokeColor { MotionColor {} }
                     }
 
                     IconImage {
@@ -540,7 +553,7 @@ PanelWindow {
                             role: "body"
                             color: row.current ? Theme.accent : Theme.text
 
-                            Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                            Behavior on color { MotionColor {} }
                         }
 
                         CyberText {
@@ -598,7 +611,7 @@ PanelWindow {
                     visible: opacity > 0.01
                     spacing: Theme.space2
 
-                    Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+                    Behavior on opacity { MotionNumber {} }
 
                     CyberText {
                         anchors.horizontalCenter: parent.horizontalCenter

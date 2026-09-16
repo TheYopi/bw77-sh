@@ -19,6 +19,6 @@ BarItem {
         font.pixelSize: Theme.fontLarge
         color: root.hovered ? Theme.danger : Theme.textDim
 
-        Behavior on color { ColorAnimation { duration: Theme.durFast } }
+        Behavior on color { MotionColor {} }
     }
 }

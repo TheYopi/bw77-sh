@@ -197,6 +197,10 @@ PanelWindow {
 
     GlitchBox {
         category: "menus"
+        // Centred, so it inherits the edge of whatever opened it -
+        // the dock, or the bar when there is no dock. Position under
+        // Motion by category overrides it.
+        autoDirection: Theme.originOf("menus", "dock")
         anchors.fill: parent
         shown: Shell.wallpaperSelectorOpen
 
@@ -397,7 +401,7 @@ PanelWindow {
                                 opacity: (tile.focused || tile.current
                                           || tileMouse.containsMouse) ? 0.0 : 0.35
                                 Behavior on opacity {
-                                    NumberAnimation { duration: Theme.durFast }
+                                    MotionNumber {}
                                 }
                             }
 
@@ -417,7 +421,7 @@ PanelWindow {
                                 // In step with the dimming above it, which was
                                 // already easing while the frame it belongs to
                                 // changed colour on the frame.
-                                Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                                Behavior on strokeColor { MotionColor {} }
                             }
 
                             // File name, only for the tile in play - a caption
@@ -433,7 +437,7 @@ PanelWindow {
                                          || tileMouse.containsMouse ? 1 : 0
                                 visible: opacity > 0.01
 
-                                Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+                                Behavior on opacity { MotionNumber {} }
 
                                 CyberText {
                                     anchors.fill: parent
@@ -636,7 +640,7 @@ PanelWindow {
                             role: "label"
                             color: closeMouse.containsMouse ? Theme.text : Theme.textDim
 
-                            Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                            Behavior on color { MotionColor {} }
                         }
                     }
 

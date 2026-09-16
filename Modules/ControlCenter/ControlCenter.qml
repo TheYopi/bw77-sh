@@ -163,6 +163,10 @@ PanelWindow {
         anchors.fill: parent
         shown: Shell.controlCenterOpen
 
+        // Centred, so it has no edge of its own - it takes the dock's, like
+        // the launcher and the menus. See Theme.originOf.
+        autoDirection: Theme.originOf("controlCenter", "dock")
+
         // Bumped once each time the card finishes arriving; every label on it
         // resolves out of noise off this. See CcNav.revealNonce.
         onShownChanged: {
@@ -384,9 +388,9 @@ PanelWindow {
                                 strokeWidth: entry.current ? Theme.borderWidth : 0
                                 notch: 6
 
-                                Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
-                                Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
-                                Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                                Behavior on opacity { MotionNumber {} }
+                                Behavior on fillColor { MotionColor {} }
+                                Behavior on strokeColor { MotionColor {} }
                             }
 
             /*
@@ -417,7 +421,7 @@ PanelWindow {
                                 color: entry.current ? Theme.accent
                                     : (railMouse.containsMouse ? Theme.text : Theme.textDim)
 
-                                Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                                Behavior on color { MotionColor {} }
                             }
 
                             GlitchText {
@@ -436,7 +440,7 @@ PanelWindow {
                                     : (railMouse.containsMouse ? Theme.text : Theme.textDim)
                                 decodeTrigger: CcNav.revealNonce
 
-                                Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                                Behavior on color { MotionColor {} }
                             }
 
                             MouseArea {
@@ -516,13 +520,15 @@ PanelWindow {
                             // Half the category, so the pane swap stays quicker
                             // than the card's own entrance but still tracks it.
                             duration: Math.max(1, Theme.durationFor("controlCenter") * 0.5)
-                            easing.type: Theme.curveFor("controlCenter")
+                            easing.type: Easing.Bezier
+                            easing.bezierCurve: Theme.bezierFor("controlCenter")
                         }
                         NumberAnimation {
                             target: paneShift; property: "y"
                             from: 10; to: 0
                             duration: Theme.durationFor("controlCenter")
-                            easing.type: Theme.curveFor("controlCenter")
+                            easing.type: Easing.Bezier
+                            easing.bezierCurve: Theme.bezierFor("controlCenter")
                         }
                     }
 
@@ -600,7 +606,7 @@ PanelWindow {
                                 color: keys.resetArmed ? Theme.danger
                                     : (resetMouse.containsMouse ? Theme.text : Theme.textDim)
 
-                                Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                                Behavior on color { MotionColor {} }
                             }
                         }
 
@@ -634,7 +640,7 @@ PanelWindow {
                                 role: "label"
                                 color: closeMouse.containsMouse ? Theme.text : Theme.textDim
 
-                                Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                                Behavior on color { MotionColor {} }
                             }
                         }
 
@@ -752,7 +758,7 @@ PanelWindow {
 
         Behavior on opacity {
             enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-            NumberAnimation { duration: Theme.durFast }
+            MotionNumber {}
         }
 
         NotchRect {

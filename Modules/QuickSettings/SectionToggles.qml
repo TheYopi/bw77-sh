@@ -255,7 +255,7 @@ QsSection {
                     caps: false
                     color: settingsMouse.containsMouse ? root.accentColor : Theme.textMuted
 
-                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on color { MotionColor {} }
                 }
 
                 MouseArea {
@@ -424,7 +424,7 @@ QsSection {
                     caps: false
                     color: btSettingsMouse.containsMouse ? root.accentColor : Theme.textMuted
 
-                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on color { MotionColor {} }
                 }
 
                 MouseArea {

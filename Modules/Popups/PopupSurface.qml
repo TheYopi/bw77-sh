@@ -35,6 +35,14 @@ PanelWindow {
         anchors.fill: parent
         shown: Popups.open
 
+        /*
+         * A widget popup hangs off the bar, so the bar's edge is the edge it
+         * comes out of: under a top bar it drops down out of it, under a
+         * bottom bar it rises out of it. The card positions itself against
+         * that same edge a few lines below, so the two cannot disagree.
+         */
+        autoDirection: Theme.originOf("bar", "bar")
+
         Panel {
             id: card
 
@@ -63,8 +71,66 @@ PanelWindow {
                 ? Math.min(barSpace, root.height - height - Theme.space2)
                 : Math.max(Theme.space2, root.height - barSpace - height)
 
-            width: content.item ? content.item.implicitWidth + padding * 2 : 320
-            height: content.item ? content.item.implicitHeight + padding * 2 : 200
+            /*
+             * --- the card keeps its size when its contents go away
+             *
+             * These read straight off content.item, with a 320x200 placeholder
+             * for when there is none - and there is none twice: once before
+             * the Loader has resolved, and again the moment the popup closes,
+             * because closing clears Popups.current and the Loader drops its
+             * component immediately.
+             *
+             * So every open ran the card from the placeholder to the real size
+             * on top of GlitchBox's entry, and every close snapped it back to
+             * 320x200 in the middle of the exit. Two animations on the way in
+             * and two on the way out, neither of them the one that was set.
+             *
+             * The last size the content actually asked for is held instead. On
+             * the way out there is nothing left to measure and nothing that
+             * needs measuring - the card is being scaled and faded out whole,
+             * at whatever size it had.
+             */
+            readonly property real wantW:
+                content.item ? content.item.implicitWidth + padding * 2 : 0
+            readonly property real wantH:
+                content.item ? content.item.implicitHeight + padding * 2 : 0
+
+            property real heldW: 320
+            property real heldH: 200
+
+            /*
+             * `sizedW`/`sizedH` suppress the animation on the FIRST real
+             * measurement only.
+             *
+             * The note below says a Behavior does not run on the binding that
+             * establishes a property, which is true - but it is not the first
+             * evaluation that matters here. content.item is null then, so the
+             * first evaluation is the placeholder, and the real size arrives as
+             * a RE-evaluation once the Loader resolves. That does run the
+             * Behavior. Flagging after the assignment rather than before is
+             * what makes the popup arrive at its own size instead of growing
+             * into it.
+             *
+             * One flag per axis: without that, whichever axis measured first
+             * would arm the other one and the popup would still animate open
+             * in one dimension.
+             */
+            property bool sizedW: false
+            property bool sizedH: false
+
+            onWantWChanged: {
+                if (card.wantW <= 0) return;
+                card.heldW = card.wantW;
+                card.sizedW = true;
+            }
+            onWantHChanged: {
+                if (card.wantH <= 0) return;
+                card.heldH = card.wantH;
+                card.sizedH = true;
+            }
+
+            width: card.heldW
+            height: card.heldH
 
             /*
              * --- the card follows its contents rather than jumping to them
@@ -85,21 +151,19 @@ PanelWindow {
              * establishes a property - so a popup still arrives at its own size.
              */
             Behavior on height {
-                enabled: Popups.open && !Theme.reducedMotion
+                enabled: card.sizedH && Popups.open && !Theme.reducedMotion
                     && Settings.animations.surfaceOpen
-                NumberAnimation {
-                    duration: Theme.durationFor("bar")
-                    easing.type: Easing.OutCubic
-                }
+                MotionNumber { duration: Theme.durationFor("bar")
+                    easing.type: Easing.Bezier
+                    easing.bezierCurve: Theme.bezierFor("bar") }
             }
 
             Behavior on width {
-                enabled: Popups.open && !Theme.reducedMotion
+                enabled: card.sizedW && Popups.open && !Theme.reducedMotion
                     && Settings.animations.surfaceOpen
-                NumberAnimation {
-                    duration: Theme.durationFor("bar")
-                    easing.type: Easing.OutCubic
-                }
+                MotionNumber { duration: Theme.durationFor("bar")
+                    easing.type: Easing.Bezier
+                    easing.bezierCurve: Theme.bezierFor("bar") }
             }
             padding: Theme.space4
             serialSeed: Popups.current

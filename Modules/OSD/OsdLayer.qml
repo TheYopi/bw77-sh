@@ -198,18 +198,129 @@ Scope {
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.namespace: "bw77-osd"
 
+            /*
+             * --- nine placements, on a three by three grid
+             *
+             * The vertical axis gained a middle row. It was top or bottom only,
+             * which meant the one position a heads-up display most obviously
+             * wants - the centre of the screen - could not be asked for, and
+             * `bottom` was doing duty as "not top" rather than meaning bottom.
+             *
+             * An axis with no anchor centres itself, which is what makes the
+             * middle row and the centre column work without any arithmetic.
+             */
             readonly property string pos: Settings.osd.position
             readonly property bool onTop: pos.indexOf("top") !== -1
-            readonly property bool onCenterX: pos.indexOf("center") !== -1
+            readonly property bool onBottom: pos.indexOf("bottom") !== -1
+            readonly property bool onLeft: pos.indexOf("left") !== -1
             readonly property bool onRight: pos.indexOf("right") !== -1
 
-            anchors {
-                top: win.onTop
-                bottom: !win.onTop
-                left: !win.onCenterX && !win.onRight
-                right: !win.onCenterX && win.onRight
+            /*
+             * --- the window has to cover the path, not just the destination
+             *
+             * A Wayland surface paints nothing outside its own bounds, so a
+             * card travelling in from the screen edge through a window sized
+             * to the card is invisible for all but the last stretch of the
+             * journey - it would appear to pop into being a few pixels from
+             * where it stops, which is the behaviour this whole change is
+             * meant to remove.
+             *
+             * So the window spans the axis the card travels along, and stays
+             * sized to the card on the other one. A strip rather than a
+             * full-screen surface: an OSD sliding down the middle of the
+             * display needs the height of the screen and the width of a card,
+             * and paying for the whole display to move one small box would
+             * undo a good deal of the memory work.
+             */
+            /*
+             * --- worked out here, not read off the animation
+             *
+             * This asked osdAnim.originEdge, and osdAnim is a GlitchBox nested
+             * several levels INSIDE this window - so the window's own geometry
+             * was being decided by a child that does not exist while the window
+             * is being built. The binding came back undefined, the surface was
+             * mapped as a short full-width box instead of a tall narrow one,
+             * and a card sliding up from below was clipped to it: the top of
+             * the card visible and everything under the first line cut off at
+             * the window's edge.
+             *
+             * Nothing here needs the child. The origin comes from the motion
+             * category and the placement, both of which are settings, so the
+             * window can work it out before it has any children at all - and
+             * the GlitchBox is handed the answer rather than asked for it.
+             */
+            readonly property string originEdge: {
+                // Position wins; on Auto this surface has a placement of its
+                // own, so that is what Auto means here rather than a host.
+                const d = Theme.directionFor("osd");
+                if (d !== "auto") return Theme.edgeOf(d);
+                return Theme.originOr("osd",
+                    Theme.originForPlacement(Settings.osd.position));
             }
-            margins { top: 60; bottom: 90; left: 60; right: 60 }
+
+            readonly property bool travelsVertically:
+                win.originEdge === "top" || win.originEdge === "bottom"
+
+            anchors {
+                top: win.onTop || win.travelsVertically
+                bottom: win.onBottom || win.travelsVertically
+                left: win.onLeft || !win.travelsVertically
+                right: win.onRight || !win.travelsVertically
+            }
+            /*
+             * --- keeping out from under the dock
+             *
+             * The bottom margin was 90, chosen when a dock was 64px tall, and
+             * it worked for as long as nobody changed the dock. Magnification
+             * alone takes a default dock to 90, and larger icons take it past
+             * that - at which point the OSD is drawn in the same place as the
+             * dock, and which of the two you see comes down to the order the
+             * compositor happens to stack them in. A hiding dock makes that
+             * worse rather than better: it moves to the overlay layer, which
+             * is the OSD's own layer, so the two stop being separable at all.
+             *
+             * Measured rather than guessed, and only on the edge the dock is
+             * actually on. Magnified, because an icon under the cursor is as
+             * tall as the dock ever gets and the OSD cannot know whether the
+             * cursor is there.
+             */
+            readonly property int dockClearance: {
+                if (!Settings.dock.enabled) return 0;
+                const lane = Settings.dock.showIndicators ? 8 : 0;
+                const icon = Math.round(Settings.dock.iconSize
+                    * (Settings.dock.magnify ? Settings.dock.magnifyScale : 1));
+                return icon + Settings.dock.padding * 2 + lane + Settings.dock.marginV;
+            }
+
+            function clear(edge, base) {
+                return base + (Settings.dock.position === edge ? win.dockClearance : 0);
+            }
+
+            /*
+             * --- no margin on the axis the card travels along
+             *
+             * A margin there would stop the window short of the screen edge,
+             * and the card would emerge through the window's boundary rather
+             * than from the edge of the display - sliding out of an invisible
+             * horizontal line a hundred and fifty pixels up, which is the same
+             * clipping as before with a smaller number on it.
+             *
+             * So the window reaches the edge, and the spacing the margin used
+             * to provide is applied to the card instead, as `restInset` below.
+             * The other axis keeps its margins: the window is sized to the card
+             * there, and the margin is what positions it.
+             */
+            margins {
+                top:    win.travelsVertically ? 0 : win.clear("top", 60)
+                bottom: win.travelsVertically ? 0 : win.clear("bottom", 60)
+                left:   win.travelsVertically ? win.clear("left", 60) : 0
+                right:  win.travelsVertically ? win.clear("right", 60) : 0
+            }
+
+            // What the margin would have been, plus the padding the window used
+            // to carry around the card. Applied by the card, since on this axis
+            // the window now runs the whole way to the edge.
+            function restInset(edge) { return win.clear(edge, 60) + 20; }
 
             implicitWidth: card.width + 40
             implicitHeight: card.height + 40
@@ -363,11 +474,103 @@ Scope {
                 anchors.fill: parent
                 category: "osd"
                 shown: scope.kind !== ""
-                autoDirection: win.onTop ? "down" : "up"
+                /*
+                 * Derived from where the OSD was placed rather than configured
+                 * separately - see Theme.originFor. A top-centre OSD drops in
+                 * from the top and lifts back out the way it came; a left one
+                 * comes in from the left edge whatever row it is on; a dead
+                 * centre one has no edge and falls back to dropping in.
+                 *
+                 * This used to be `onTop ? "down" : "up"`, which read the
+                 * vertical axis only - so an OSD parked against the left edge
+                 * still arrived from the top or the bottom, travelling across
+                 * the edge it was sitting on instead of out of it.
+                 */
+                // The window already worked this out - see above. Taking it
+                // from there rather than computing it again is what stops the
+                // surface and the thing moving inside it from disagreeing
+                // about which way it travels.
+                autoDirection: win.originEdge
+
+                /*
+                 * --- how far in from the screen edge this window sits
+                 *
+                 * The OSD's window is a small box, not the whole display, so
+                 * GlitchBox measuring its own bounds would only ever find the
+                 * distance to the edge of that box. What is missing is
+                 * everything between the box and the screen edge, which is
+                 * either the margin on an anchored side or half the leftover
+                 * space on an unanchored one - an axis with no anchor centres
+                 * itself, so the gap is the same top and bottom.
+                 *
+                 * Only the axis the surface travels along matters, which is
+                 * why this asks the origin rather than adding all four.
+                 */
+                /*
+                 * What is left between the window and the screen edge on the
+                 * axis the card travels along - which, now that the window
+                 * spans that axis, is exactly the layer-shell margin. Only the
+                 * travel axis matters, which is why this asks the origin
+                 * rather than adding up all four sides.
+                 */
+                // Nothing: the window runs to the screen edge on the axis
+                // the card travels along, so the distance GlitchBox measures
+                // inside it is already the whole journey.
+                edgeInset: 0
 
                 Panel {
                     id: card
-                    anchors.centerIn: parent
+
+                    /*
+                     * Placement moved in here from the window's anchors.
+                     *
+                     * The window is a strip along the travel axis now, so
+                     * "bottom-right" is no longer something its own geometry
+                     * can express - on that axis the window covers the whole
+                     * screen and the card has to say where in it to sit. The
+                     * other axis is still sized to the card, where centring is
+                     * the only thing that means anything.
+                     */
+                    /*
+                     * Plain x and y, not conditional anchors.
+                     *
+                     * Assigning undefined to an anchor does not clear it - the
+                     * same trap the notification stack is built around - so a
+                     * card that switched from top to bottom would end up
+                     * anchored to both and stretched between them. Coordinates
+                     * cannot half-apply.
+                     *
+                     * On the travel axis the window spans the screen, so the
+                     * placement has to be expressed here; on the other axis the
+                     * window is sized to the card and centring is the only
+                     * thing that means anything.
+                     */
+                    /*
+                     * `inset` is the padding the window used to provide.
+                     *
+                     * The window was sized to the card plus 40 and the card was
+                     * centred in it, so there were 20px around it. On the axis
+                     * the window now spans, that padding has to be put back by
+                     * hand or the card sits flush against the margin - twenty
+                     * pixels lower, on a bottom placement, than it used to. That
+                     * is enough to tuck it under a magnified dock it previously
+                     * cleared, which is exactly what it did.
+                     */
+                    x: {
+                        if (win.travelsVertically || (!win.onLeft && !win.onRight))
+                            return Math.round((parent.width - width) / 2);
+                        return win.onLeft
+                            ? win.restInset("left")
+                            : parent.width - width - win.restInset("right");
+                    }
+
+                    y: {
+                        if (!win.travelsVertically || (!win.onTop && !win.onBottom))
+                            return Math.round((parent.height - height) / 2);
+                        return win.onTop
+                            ? win.restInset("top")
+                            : parent.height - height - win.restInset("bottom");
+                    }
 
                     serialSeed: "osd"
                     padding: Theme.space4

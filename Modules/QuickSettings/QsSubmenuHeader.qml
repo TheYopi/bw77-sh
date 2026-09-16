@@ -43,7 +43,7 @@ Item {
             color: root.scanning ? root.tint
                 : (scanMouse.containsMouse ? root.tint : Theme.textMuted)
 
-            Behavior on color { ColorAnimation { duration: Theme.durFast } }
+            Behavior on color { MotionColor {} }
 
             SequentialAnimation on opacity {
                 running: root.scanning && !Theme.reducedMotion

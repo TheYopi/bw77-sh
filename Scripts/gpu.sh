@@ -34,16 +34,46 @@ name=""
 amd_base=""
 amd_hwmon=""
 
+# --- read_first sets RF rather than echoing it
+#
+# It is called five times a tick on the AMD path, and every one of those used
+# to be `$(read_first ...)` - a command substitution, which is a forked
+# subshell whose only job is to carry a number back across it. That is five
+# processes per sample, plus the `sleep`, to read five files the shell already
+# has open access to. Setting a global costs none of them, and the loop below
+# waits on a pipe instead of forking a sleep.
+RF=""
+
 read_first() {
-  # Echoes the contents of the first readable, non-empty file given.
-  local f
+  local f v
+  RF=""
   for f in "$@"; do
     [ -r "$f" ] || continue
-    local v
     read -r v < "$f" 2>/dev/null || continue
-    [ -n "$v" ] && { printf '%s' "$v"; return 0; }
+    [ -n "$v" ] && { RF="$v"; return 0; }
   done
-  printf '%s' ""
+  return 1
+}
+
+# --- fork-free wait, as in sysmon.sh and locks.sh
+#
+# `read -t` on a fifo this process holds open at both ends: no writer ever
+# sends a byte, and holding the write end means there is no EOF to return
+# early on. Falls back to `sleep` if the fifo cannot be made.
+nap_fd_ready=0
+fifo="$(mktemp -u 2>/dev/null)" || fifo=""
+if [ -n "$fifo" ] && mkfifo "$fifo" 2>/dev/null; then
+  exec 9<>"$fifo"
+  rm -f "$fifo"
+  nap_fd_ready=1
+fi
+
+nap() {
+  if [ "$nap_fd_ready" = 1 ]; then
+    read -r -t "$interval" -u 9 _ 2>/dev/null
+    return 0
+  fi
+  sleep "$interval"
 }
 
 probe_amd() {
@@ -59,7 +89,8 @@ probe_amd() {
       [ -d "$h" ] && { amd_hwmon="$h"; break; }
     done
 
-    name="$(read_first "$dev/product_name")"
+    read_first "$dev/product_name"
+    name="$RF"
     [ -z "$name" ] && name="AMD GPU"
     vendor="amd"
     return 0
@@ -131,31 +162,23 @@ emit() {
 }
 
 sample_amd() {
-  local usage temp vused vtotal power raw
+  local usage=-1 temp=-1 vused=-1 vtotal=-1 power=-1
 
-  usage="$(read_first "$amd_base/gpu_busy_percent")"
-  [ -z "$usage" ] && usage=-1
+  read_first "$amd_base/gpu_busy_percent" && usage="$RF"
 
   # Bytes from the driver, mebibytes out - a widget showing 25199575040 is not
   # showing anything.
-  vused="$(read_first "$amd_base/mem_info_vram_used")"
-  vtotal="$(read_first "$amd_base/mem_info_vram_total")"
-  [ -n "$vused" ]  && vused=$(( vused / 1048576 ))   || vused=-1
-  [ -n "$vtotal" ] && vtotal=$(( vtotal / 1048576 )) || vtotal=-1
+  read_first "$amd_base/mem_info_vram_used"  && vused=$(( RF / 1048576 ))
+  read_first "$amd_base/mem_info_vram_total" && vtotal=$(( RF / 1048576 ))
 
-  temp=-1
   if [ -n "$amd_hwmon" ]; then
-    raw="$(read_first "$amd_hwmon/temp1_input")"
-    [ -n "$raw" ] && temp=$(( raw / 1000 ))
-  fi
+    read_first "$amd_hwmon/temp1_input" && temp=$(( RF / 1000 ))
 
-  # Millidegrees and microwatts are the hwmon convention. power1_average is
-  # the smoothed figure and is what the card reports on most parts;
-  # power1_input is the instantaneous one and is all some of them have.
-  power=-1
-  if [ -n "$amd_hwmon" ]; then
-    raw="$(read_first "$amd_hwmon/power1_average" "$amd_hwmon/power1_input")"
-    [ -n "$raw" ] && power=$(( raw / 1000000 ))
+    # Millidegrees and microwatts are the hwmon convention. power1_average is
+    # the smoothed figure and is what the card reports on most parts;
+    # power1_input is the instantaneous one and is all some of them have.
+    read_first "$amd_hwmon/power1_average" "$amd_hwmon/power1_input" \
+      && power=$(( RF / 1000000 ))
   fi
 
   emit "$usage" "$temp" "$vused" "$vtotal" "$power"
@@ -192,12 +215,11 @@ sample_nvidia() {
 }
 
 sample_intel() {
-  local temp=-1 power=-1 raw
+  local temp=-1 power=-1
   if [ -n "$intel_hwmon" ]; then
-    raw="$(read_first "$intel_hwmon/temp1_input")"
-    [ -n "$raw" ] && temp=$(( raw / 1000 ))
-    raw="$(read_first "$intel_hwmon/power1_average" "$intel_hwmon/power1_input")"
-    [ -n "$raw" ] && power=$(( raw / 1000000 ))
+    read_first "$intel_hwmon/temp1_input" && temp=$(( RF / 1000 ))
+    read_first "$intel_hwmon/power1_average" "$intel_hwmon/power1_input" \
+      && power=$(( RF / 1000000 ))
   fi
   # Usage and VRAM stay -1: see probe_intel.
   emit -1 "$temp" -1 -1 "$power"
@@ -212,5 +234,5 @@ while :; do
   # Gone with the shell. Quickshell ignores SIGPIPE and its children inherit
   # that, so a failed write alone does not end an orphaned copy - see netbt.sh.
   kill -0 "$PPID" 2>/dev/null || exit 0
-  sleep "$interval"
+  nap
 done

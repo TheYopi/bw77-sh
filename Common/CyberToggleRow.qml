@@ -48,8 +48,8 @@ Item {
         strokeWidth: root.navFocused ? Theme.borderWidthStrong : Theme.borderWidth
         notch: Theme.notch
 
-        Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
-        Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+        Behavior on strokeColor { MotionColor {} }
+        Behavior on fillColor { MotionColor {} }
     }
 
     // Square, and sized off the bar's height so it stays square whatever the
@@ -66,7 +66,7 @@ Item {
         strokeWidth: Theme.borderWidth
         notch: 7
 
-        Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+        Behavior on fillColor { MotionColor {} }
     }
 
     CyberText {
@@ -80,7 +80,7 @@ Item {
         elide: Text.ElideRight
         color: root.checked ? root.accentColor : Theme.textDim
 
-        Behavior on color { ColorAnimation { duration: Theme.durFast } }
+        Behavior on color { MotionColor {} }
     }
 
     MouseArea {

@@ -48,13 +48,25 @@ if [ -n "$fifo" ] && mkfifo "$fifo" 2>/dev/null; then
 fi
 
 nap() {
+  local secs="${1:-$interval}"
   if [ "$nap_fd_ready" = 1 ]; then
     # Returns non-zero on timeout, which is the expected path.
-    read -r -t "$interval" -u 9 _ 2>/dev/null
+    read -r -t "$secs" -u 9 _ 2>/dev/null
     return 0
   fi
-  sleep "$interval"
+  sleep "$secs"
 }
+
+# --- what to wait when there is nothing to watch
+#
+# The fast tick is there so a deliberate tap of Caps Lock cannot fall between
+# two looks at the LED. A machine that exposes no lock LEDs at all has nothing
+# to fall between: the loop has already said "none", it will keep saying it,
+# and the only reason to come back around is to notice a keyboard that gets
+# plugged in later. Twenty wakeups a second to watch for that is twenty a
+# second spent on nothing, so it backs off to a half-second and the rescan
+# below still catches the new keyboard within a few of them.
+idle_interval=0.5
 
 # --- node discovery
 caps_files=()
@@ -122,9 +134,11 @@ ticks=0
 while :; do
   kill -0 "$PPID" 2>/dev/null || exit 0
 
+  bare=0
   if [ ${#caps_files[@]} -eq 0 ] \
      && [ ${#num_files[@]} -eq 0 ] \
      && [ ${#scroll_files[@]} -eq 0 ]; then
+    bare=1
     if [ "$last" != "none" ]; then
       printf 'none\n' || exit 0
       last="none"
@@ -142,5 +156,9 @@ while :; do
     rescan
   fi
 
-  nap
+  if [ "$bare" = 1 ]; then
+    nap "$idle_interval"
+  else
+    nap
+  fi
 done

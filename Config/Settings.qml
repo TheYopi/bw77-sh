@@ -284,6 +284,26 @@ Singleton {
         "Looking for input devices\\u2026": "Поиск устройств ввода\\u2026",
         "Looking for output devices\\u2026": "Поиск устройств вывода\\u2026",
         "MEM": "ПАМ",
+        "Which edge it comes from. Auto follows whatever opens it": "С какого края появляется. «Авто» — со стороны того, что его открывает",
+        "How it arrives once it knows where from": "Как именно появляется, когда сторона уже определена",
+        "top": "сверху",
+        "bottom": "снизу",
+        "Entry": "Появление",
+        "Automatic slides in from wherever the surface is placed": "Автоматически — выезжает с той стороны, где расположена поверхность",
+        "Middle left": "По центру слева",
+        "Middle centre": "По центру",
+        "Middle right": "По центру справа",
+        "mechanical": "механическая",
+        "emphasized": "акцентированная",
+        "decelerate": "замедление",
+        "accelerate": "ускорение",
+        "linear": "линейная",
+        "Where in the movement the time is spent": "В какой части движения расходуется время",
+        "RAM": "ОЗУ",
+        "DOWNLOAD": "ПРИЁМ",
+        "UPLOAD": "ПЕРЕДАЧА",
+        "Reading processes...": "Чтение процессов...",
+        "Nothing drawing": "Ничего не рисует",
         "MIC": "МИК",
         "Magnification": "Увеличение",
         "Magnification spread": "Радиус увеличения",
@@ -1219,7 +1239,7 @@ Singleton {
 
             property JsonObject osd: JsonObject {
                 property bool enabled: true
-                property string position: "bottom-center"  // *-left | *-center | *-right
+                property string position: "bottom-center"  // {top|middle|bottom}-{left|center|right}
                 property string style: "arc"               // arc | bar
                 property int timeout: 1600
                 property bool showPercent: true
@@ -1333,7 +1353,7 @@ Singleton {
                 property bool snapToGrid: true
                 property real gridSnap: 8
                 property var widgets: [
-                    { "type": "sysmon", "screen": "", "x": 40, "y": 80, "w": 300, "h": 220 },
+                    { "type": "sysmon", "screen": "", "x": 40, "y": 80, "w": 320, "h": 420 },
                     { "type": "visualizer", "screen": "", "x": 40, "y": 320, "w": 300, "h": 120 },
                     { "type": "media", "screen": "", "x": 40, "y": 460, "w": 300, "h": 140 }
                 ]

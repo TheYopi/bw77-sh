@@ -57,7 +57,7 @@ Item {
                 }
                 Behavior on color {
                     enabled: root.animated
-                    ColorAnimation { duration: Theme.durFast }
+                    MotionColor {}
                 }
             }
         }

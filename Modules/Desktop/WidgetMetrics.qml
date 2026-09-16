@@ -26,9 +26,19 @@ Singleton {
     id: root
 
     readonly property var table: ({
-        // Four metric rows, each needing a label, a number and a sparkline
-        // tall enough to read. Below this the graphs collapse into a line.
-        "sysmon":     ({ w: 260, h: 240, aspect: 1.5 }),
+        /*
+         * The floors went up with the gauges.
+         *
+         * A block is now a dial with a figure inside it and a short table or a
+         * graph underneath, which is a taller thing than the label-number-bar
+         * row it replaced - and the combined widget stacks five of them, since
+         * the two network directions are separate readings now. Below this the
+         * dials fall away one at a time (MetricBlock drops the arc rather than
+         * squashing it) and the tables lose rows, so a widget dragged smaller
+         * degrades into the old shape instead of piling text on text. These are
+         * the sizes at which nothing has to be given up yet.
+         */
+        "sysmon":     ({ w: 260, h: 380, aspect: 1.5 }),
 
         /*
          * The per-device monitors, which are the same panel scoped to one
@@ -40,18 +50,23 @@ Singleton {
          * They break across early - one or two blocks side by side is a strip,
          * which is the shape these are usually wanted in.
          */
-        "cpu":        ({ w: 150, h: 96,  aspect: 1.6 }),
-        "memory":     ({ w: 150, h: 60,  aspect: 2.0 }),
+        /*
+         * These break across early - at 1.2 rather than 2.0 - because a block
+         * is now a dial with a table under it, and two of those side by side
+         * is a far better use of a given area than two stacked. The old
+         * thresholds assumed a block was a line of text, which stacks happily.
+         */
+        "cpu":        ({ w: 300, h: 170, aspect: 1.2 }),
+        "memory":     ({ w: 180, h: 180, aspect: 2.1 }),
 
-        // Taller than the other single-metric widgets because it is not one
-        // reading: the cell has to clear the 58px at which the secondary line
-        // is dropped, or the upload rate never appears. A 60px floor here was
-        // a widget that could only ever show half of what it measures.
-        "network":    ({ w: 170, h: 96,  aspect: 2.0 }),
+        // Two readings rather than one - download and upload are separate
+        // blocks now - and neither has a dial, so the height is what the two
+        // figures and their graphs need rather than what an arc needs.
+        "network":    ({ w: 260, h: 150, aspect: 1.2 }),
 
-        // Up to three blocks - usage, VRAM, temperature - so a little more
-        // room than the single-reading ones.
-        "gpu":        ({ w: 170, h: 130, aspect: 1.4 }),
+        // Up to three blocks - usage, VRAM, temperature - two of which carry
+        // a process table under the dial.
+        "gpu":        ({ w: 360, h: 190, aspect: 1.1 }),
 
         // Bars need vertical room to be a visualiser rather than a texture.
         "visualizer": ({ w: 220, h: 110, aspect: 3.0 }),

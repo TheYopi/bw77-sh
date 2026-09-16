@@ -44,7 +44,7 @@ Item {
         notchBottomRight: true
         notchBottomLeft: false
 
-        Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+        Behavior on strokeColor { MotionColor {} }
     }
 
     // --- mock top bar

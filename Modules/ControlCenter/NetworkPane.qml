@@ -163,7 +163,7 @@ PaneScroll {
 
             Behavior on height {
                 enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-                NumberAnimation { duration: Theme.durFast; easing.type: Theme.easeSnap }
+                MotionNumber { curve: Theme.curveEnter }
             }
 
             NotchRect {

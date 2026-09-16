@@ -55,7 +55,7 @@ BarItem {
                     visible: !Settings.bar.trayColorize
                     opacity: itemMouse.containsMouse ? 1.0 : 0.85
 
-                    Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+                    Behavior on opacity { MotionNumber {} }
                 }
 
                 MultiEffect {
@@ -66,7 +66,7 @@ BarItem {
                     colorizationColor: root.tint
                     opacity: itemMouse.containsMouse ? 1.0 : 0.85
 
-                    Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+                    Behavior on opacity { MotionNumber {} }
                 }
 
                 // Attention state gets the game's warning yellow rather than a badge.

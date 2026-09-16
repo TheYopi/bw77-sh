@@ -44,8 +44,8 @@ BarItem {
 
         CyberText {
             height: parent.height
-            // nf-cod-bell
-            text: "\ueaa2"
+            // nf-fa-bell
+            text: "\uf0f3"
             role: "icon"
             sizeOverride: root.cfgIconSize
             color: root.cfgColor(root.accentColor)
@@ -74,7 +74,7 @@ BarItem {
 
             Behavior on width {
                 enabled: !Theme.reducedMotion
-                NumberAnimation { duration: Theme.durFast; easing.type: Easing.OutQuad }
+                MotionNumber {}
             }
 
             CyberText {

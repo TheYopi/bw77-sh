@@ -79,8 +79,8 @@ Item {
     width: vertical ? baseSize + indicatorLane : size
     height: vertical ? size : baseSize + indicatorLane
 
-    Behavior on width { NumberAnimation { duration: Theme.durFast; easing.type: Theme.easeOut } }
-    Behavior on height { NumberAnimation { duration: Theme.durFast; easing.type: Theme.easeOut } }
+    Behavior on width { MotionNumber { curve: Theme.curveEnter } }
+    Behavior on height { MotionNumber { curve: Theme.curveEnter } }
 
     // Colour every icon can be forced to, so a dock of mismatched brand colours
     // reads as one piece of hardware.
@@ -121,8 +121,8 @@ Item {
         visible: !root.isAction && !root.tinted
         smooth: true
 
-        Behavior on width { NumberAnimation { duration: Theme.durFast; easing.type: Theme.easeOut } }
-        Behavior on height { NumberAnimation { duration: Theme.durFast; easing.type: Theme.easeOut } }
+        Behavior on width { MotionNumber { curve: Theme.curveEnter } }
+        Behavior on height { MotionNumber { curve: Theme.curveEnter } }
     }
 
     MultiEffect {
@@ -153,7 +153,7 @@ Item {
             notchBottomRight: true
             notchBottomLeft: false
 
-            Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+            Behavior on fillColor { MotionColor {} }
         }
 
         Rectangle {
@@ -172,6 +172,11 @@ Item {
         anchors.margins: -3
         z: -1
 
+        // The plate is behind the icon, so the wash reads as the tile under
+        // the application lighting up rather than the artwork changing colour.
+        pressed: mouse.pressed
+        pressColor: Theme.accent
+
         readonly property string borderMode: Settings.dock.itemBorders
         readonly property real strength: {
             if (borderMode === "never") return 0;
@@ -182,7 +187,7 @@ Item {
         visible: strength > 0
         opacity: strength
 
-        Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+        Behavior on opacity { MotionNumber {} }
 
         fillColor: Theme.alpha(Theme.accent, 0.16)
         strokeColor: Theme.alpha(Theme.accent, 0.7)
@@ -273,9 +278,9 @@ Item {
                 height: root.vertical ? pips.length : pips.thickness
                 color: root.indicatorColor
 
-                Behavior on width { NumberAnimation { duration: Theme.durFast } }
-                Behavior on height { NumberAnimation { duration: Theme.durFast } }
-                Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                Behavior on width { MotionNumber {} }
+                Behavior on height { MotionNumber {} }
+                Behavior on color { MotionColor {} }
             }
         }
     }
@@ -335,7 +340,12 @@ Item {
          * a dock set to a long dramatic slide gave its tooltips the same.
          */
         readonly property int tipDuration: Theme.durationFor("tooltip")
-        readonly property int tipCurve: Theme.curveFor("tooltip")
+        // Control points rather than an Easing enum - see Theme. A tooltip
+        // appears under the pointer rather than being asked for, so it takes
+        // the tooltip category's arrival curve on the way in and the shell's
+        // exit curve on the way out, like every other surface.
+        readonly property var tipCurve: Theme.bezierFor("tooltip")
+        readonly property var tipOutCurve: Theme.curveExit
 
         /*
          * Where it comes from.
@@ -346,28 +356,34 @@ Item {
          * Naming a direction outright in the Animations pane overrides that,
          * and "fade" means it arrives without moving at all.
          */
+        /*
+         * Out of the dock, like the dock's menus - see Theme.originFor. This
+         * carried its own copy of the edge logic AND its own copy of the sign
+         * convention below, which is two places for the same rule to drift
+         * from the one in GlitchBox.
+         */
         readonly property string tipDirection: {
             const d = Theme.directionFor("tooltip");
-            if (d !== "auto") return d;
-            if (root.vertical) return Settings.dock.position === "left" ? "left" : "right";
-            return Settings.dock.position === "top" ? "down" : "up";
+            if (d !== "auto") return Theme.edgeOf(d);
+            return Theme.originFromEdge(Settings.dock.position);
         }
 
         // Short. The label is a few characters sitting next to the thing it
         // describes; anything further reads as a second surface flying in.
         readonly property int tipTravel: 6
 
+        // Negative is left and up, because that is where it starts. Same
+        // convention as GlitchBox, now that both name edges the same way.
         readonly property int tipFromX: tip.tipDirection === "left" ? -tip.tipTravel
             : tip.tipDirection === "right" ? tip.tipTravel : 0
-        readonly property int tipFromY: tip.tipDirection === "up" ? tip.tipTravel
-            : tip.tipDirection === "down" ? -tip.tipTravel : 0
+        readonly property int tipFromY: tip.tipDirection === "top" ? -tip.tipTravel
+            : tip.tipDirection === "bottom" ? tip.tipTravel : 0
 
         Behavior on opacity {
             enabled: Settings.animations.surfaceOpen && !Theme.reducedMotion
-            NumberAnimation {
-                duration: tip.tipDuration
-                easing.type: tip.tipCurve
-            }
+            MotionNumber { duration: tip.tipDuration
+                easing.type: Easing.Bezier
+                    easing.bezierCurve: tip.wanted ? tip.tipCurve : tip.tipOutCurve }
         }
 
         transform: Translate {
@@ -376,11 +392,13 @@ Item {
 
             Behavior on x {
                 enabled: Settings.animations.surfaceOpen && !Theme.reducedMotion
-                NumberAnimation { duration: tip.tipDuration; easing.type: tip.tipCurve }
+                NumberAnimation { duration: tip.tipDuration; easing.type: Easing.Bezier
+                    easing.bezierCurve: tip.wanted ? tip.tipCurve : tip.tipOutCurve }
             }
             Behavior on y {
                 enabled: Settings.animations.surfaceOpen && !Theme.reducedMotion
-                NumberAnimation { duration: tip.tipDuration; easing.type: tip.tipCurve }
+                NumberAnimation { duration: tip.tipDuration; easing.type: Easing.Bezier
+                    easing.bezierCurve: tip.wanted ? tip.tipCurve : tip.tipOutCurve }
             }
         }
 

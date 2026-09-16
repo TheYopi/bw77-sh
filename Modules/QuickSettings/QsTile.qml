@@ -70,6 +70,10 @@ Item {
 
     NotchRect {
         anchors.fill: parent
+
+        pressed: mouse.pressed
+        pressColor: root.activeTint
+
         fillColor: root.lit
             ? Theme.alpha(root.activeTint, 0.28)
             : (mouse.containsMouse ? Theme.alpha(root.activeTint, 0.12)
@@ -94,10 +98,10 @@ Item {
          * reads as the tile answering rather than fading.
          */
         Behavior on fillColor {
-            ColorAnimation { duration: Theme.durFast; easing.type: Easing.OutQuad }
+            MotionColor {}
         }
         Behavior on strokeColor {
-            ColorAnimation { duration: Theme.durFast; easing.type: Easing.OutQuad }
+            MotionColor {}
         }
     }
 
@@ -132,7 +136,7 @@ Item {
         color: root.glyphColor
 
         Behavior on color {
-            ColorAnimation { duration: Theme.durFast; easing.type: Easing.OutQuad }
+            MotionColor {}
         }
     }
 
@@ -159,7 +163,7 @@ Item {
             elide: Text.ElideRight
 
             Behavior on color {
-                ColorAnimation { duration: Theme.durFast; easing.type: Easing.OutQuad }
+                MotionColor {}
             }
         }
 
@@ -215,7 +219,7 @@ Item {
             color: chevronMouse.containsMouse ? root.activeTint : Theme.textDim
 
             Behavior on color {
-                ColorAnimation { duration: Theme.durFast; easing.type: Easing.OutQuad }
+                MotionColor {}
             }
 
             // Ease-in-out on the way back, so the arrow and the list it
@@ -223,11 +227,11 @@ Item {
             // See QsSubmenu for why a collapse does not take an ease-out.
             Behavior on rotation {
                 enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-                NumberAnimation {
-                    duration: Theme.durationFor("quickSettings")
-                    easing.type: root.expanded
-                        ? Theme.curveFor("quickSettings") : Easing.InOutCubic
-                }
+                MotionNumber { duration: root.expanded ? Theme.durationFor("quickSettings")
+                        : Theme.exitDuration(Theme.durationFor("quickSettings"))
+                    easing.type: Easing.Bezier
+                    easing.bezierCurve: root.expanded
+                        ? Theme.bezierFor("quickSettings") : Theme.curveExit }
             }
         }
 

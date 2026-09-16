@@ -74,7 +74,8 @@ Flickable {
         target: root
         property: "contentY"
         duration: Theme.durFast
-        easing.type: Theme.easeSnap
+        easing.type: Easing.Bezier
+        easing.bezierCurve: Theme.curveEnter
     }
 
     function glideTo(y) {
@@ -202,7 +203,7 @@ Flickable {
                 strokeColor: "transparent"
                 notch: 6
 
-                Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+                Behavior on opacity { MotionNumber {} }
             }
 
             Row {
@@ -218,7 +219,7 @@ Flickable {
                     sizeOverride: Theme.fontSmall
                     color: backMouse.containsMouse ? Theme.accent : Theme.textDim
 
-                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on color { MotionColor {} }
                 }
 
                 CyberText {
@@ -227,7 +228,7 @@ Flickable {
                     role: "title"
                     color: backMouse.containsMouse ? Theme.text : Theme.textDim
 
-                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on color { MotionColor {} }
                 }
             }
 

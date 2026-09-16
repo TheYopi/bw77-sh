@@ -205,8 +205,8 @@ Item {
             opacity: active ? 1 : 0
             clip: true
 
-            Behavior on height { NumberAnimation { duration: Theme.durFast; easing.type: Theme.easeSnap } }
-            Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+            Behavior on height { MotionNumber { curve: Theme.curveEnter } }
+            Behavior on opacity { MotionNumber {} }
 
             NotchRect {
                 anchors.fill: parent
@@ -311,9 +311,9 @@ Item {
                     notchBottomRight: true
                     notchBottomLeft: false
 
-                    Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
-                    Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
-                    Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                    Behavior on opacity { MotionNumber {} }
+                    Behavior on fillColor { MotionColor {} }
+                    Behavior on strokeColor { MotionColor {} }
                 }
 
                 // A diamond rather than a word: "in use" is a fact about one row

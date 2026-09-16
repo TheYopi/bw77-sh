@@ -275,6 +275,10 @@ PanelWindow {
     GlitchBox {
         id: surfaceAnim
         category: "launcher"
+        // Centred, so it inherits the edge of whatever opened it -
+        // the dock, or the bar when there is no dock. Position under
+        // Motion by category overrides it.
+        autoDirection: Theme.originOf("launcher", "dock")
         anchors.fill: parent
         shown: Shell.emojiOpen
 
@@ -334,11 +338,11 @@ PanelWindow {
 
                     Behavior on height {
                         enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-                        NumberAnimation { duration: Theme.durFast; easing.type: Theme.easeSnap }
+                        MotionNumber { curve: Theme.curveEnter }
                     }
                     Behavior on opacity {
                         enabled: !Theme.reducedMotion && Settings.animations.surfaceOpen
-                        NumberAnimation { duration: Theme.durFast }
+                        MotionNumber {}
                     }
 
                     NotchRect {
@@ -467,8 +471,8 @@ PanelWindow {
                             notchBottomRight: true
                             notchBottomLeft: false
 
-                            Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
-                            Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                            Behavior on fillColor { MotionColor {} }
+                            Behavior on strokeColor { MotionColor {} }
                         }
 
                         // Native rendering: colour emoji are bitmaps, which the
@@ -508,7 +512,7 @@ PanelWindow {
                         visible: opacity > 0.01
                         spacing: Theme.space2
 
-                        Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+                        Behavior on opacity { MotionNumber {} }
 
                         CyberText {
                             anchors.horizontalCenter: parent.horizontalCenter
@@ -569,8 +573,8 @@ PanelWindow {
                                 notchBottomRight: true
                                 notchBottomLeft: false
 
-                                Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
-                                Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                                Behavior on fillColor { MotionColor {} }
+                                Behavior on strokeColor { MotionColor {} }
                             }
 
                             Text {
@@ -586,7 +590,7 @@ PanelWindow {
                                 renderType: Text.NativeRendering
                                 opacity: tab.current || tabMouse.containsMouse ? 1 : 0.5
 
-                                Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+                                Behavior on opacity { MotionNumber {} }
                             }
 
                             MouseArea {

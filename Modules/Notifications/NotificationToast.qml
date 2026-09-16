@@ -4,12 +4,16 @@ import Quickshell.Widgets
 import Quickshell.Services.Notifications
 import qs.Config
 import qs.Common
+import qs.Services
 
 Item {
     id: root
 
     required property var notif
     signal dismissed()
+
+    // Which edge this toast comes from, decided by the layer - see below.
+    property string originEdge: "top"
 
     /*
      * State that survives this delegate being destroyed and rebuilt, owned by
@@ -117,7 +121,8 @@ Item {
         from: root.slideFrom
         to: 0
         duration: Theme.durationFor("notifications")
-        easing.type: Theme.curveFor("notifications")
+        easing.type: Easing.Bezier
+        easing.bezierCurve: Theme.bezierFor("notifications")
     }
 
     /*
@@ -133,7 +138,27 @@ Item {
     readonly property color accent: critical ? Theme.danger
         : (root.notif && root.notif.urgency === NotificationUrgency.Low
             ? Theme.textDim : Theme.accent)
-    readonly property string body: root.notif ? root.notif.body : ""
+    /*
+     * --- markup comes off before anything is drawn
+     *
+     * A sender is allowed a little HTML in a notification, and the toast draws
+     * plain text, so the tags have to be stripped here or they are shown
+     * literally: Telegram puts "<br></br>" in its summaries and the toast was
+     * printing it. NotificationStore owns the stripping, since history had to
+     * do exactly the same thing and the two must agree on what a notification
+     * says.
+     *
+     * The summary is collapsed to one line as well - it is drawn in a
+     * single-line field, and an embedded newline pushed the rest of the card
+     * out of it.
+     */
+    readonly property string appNameText:
+        NotificationStore.oneLine(root.notif ? root.notif.appName : "")
+    readonly property string summaryText:
+        NotificationStore.oneLine(root.notif ? root.notif.summary : "")
+    readonly property string body:
+        NotificationStore.plainText(root.notif ? root.notif.body : "")
+            .replace(/\n{3,}/g, "\n\n").trim()
 
     /*
      * --- the action buttons
@@ -152,11 +177,35 @@ Item {
      * regeneration. An update that changes only the body text now leaves the
      * buttons alone entirely.
      */
+    /*
+     * --- not every action is a button
+     *
+     * An action is a pair: an identifier the sender will be handed back, and a
+     * label to put on the button. Plenty of senders fill in only the first,
+     * which drew a button with nothing written on it - and since the row splits
+     * its width evenly between however many there are, one blank action also
+     * shrank the real ones to make room for it.
+     *
+     * "default" is the one the spec asks be invoked when the notification
+     * itself is activated rather than a button pressed, so it is not a button
+     * either. Its label is dropped only when there is nothing to read on it: a
+     * sender that labelled it properly meant it to be pressed.
+     */
+    function usable(action) {
+        if (!action) return false;
+        const label = NotificationStore.collapse(action.text);
+        if (label === "") return false;
+        return !(String(action.identifier || "").toLowerCase() === "default"
+                 && label.toLowerCase() === "default");
+    }
+
     readonly property string actionSignature: {
         const given = (root.notif && root.notif.actions) || [];
         let sig = "";
-        for (let i = 0; i < given.length; i++)
-            sig += String(given[i].text || "") + "\u001f";
+        for (let i = 0; i < given.length; i++) {
+            if (!root.usable(given[i])) continue;
+            sig += String(given[i].text) + "\u001f";
+        }
         return sig;
     }
 
@@ -165,7 +214,8 @@ Item {
     function rebuildActions() {
         const out = [];
         const given = (root.notif && root.notif.actions) || [];
-        for (let i = 0; i < given.length; i++) out.push(given[i]);
+        for (let i = 0; i < given.length; i++)
+            if (root.usable(given[i])) out.push(given[i]);
 
         /*
          * Always offer a way out.
@@ -223,6 +273,23 @@ Item {
         id: toastAnim
         anchors.fill: parent
         shown: root.shown
+
+        /*
+         * Handed down by the layer rather than worked out again here.
+         *
+         * The layer resolves this to decide which axis its window spans, and a
+         * toast that reached its own conclusion could disagree with the window
+         * it lives in - travelling along an axis the surface does not cover,
+         * which is the clipping this was all about. One answer, computed where
+         * the window geometry is decided, passed to whatever needs it.
+         */
+        autoDirection: root.originEdge
+
+        // Nothing to add: the layer's window reaches the screen edge on the
+        // axis the toast travels along, so the distance GlitchBox measures
+        // inside it is already the whole journey.
+        edgeInset: 0
+
         enabled: Settings.animations.notificationEntry
         // Only the first appearance is an arrival. A rebuild caused by a
         // neighbour being added or removed must not replay it - but the toast
@@ -325,8 +392,8 @@ Item {
                         CyberText {
                             width: parent.width
                             horizontalAlignment: Text.AlignHCenter
-                            text: (root.notif && root.notif.appName)
-                                || Settings.t("System")
+                            text: root.appNameText !== ""
+                                ? root.appNameText : Settings.t("System")
                             role: "label"
                             bold: true
                             // The one place the danger colour earns its keep on
@@ -341,7 +408,7 @@ Item {
                             width: parent.width
                             textWidth: parent.width
                             horizontalAlignment: Text.AlignHCenter
-                            text: root.notif ? root.notif.summary : ""
+                            text: root.summaryText
                             role: "micro"
                             color: Theme.alpha(Theme.danger, 0.85)
                             decodeOnChange: Settings.notifications.animation === "glitch"
@@ -410,8 +477,8 @@ Item {
                                         ? Theme.danger : Theme.alpha(Theme.danger, 0.65)
                                     notch: 7
 
-                                    Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
-                                    Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+                                    Behavior on fillColor { MotionColor {} }
+                                    Behavior on strokeColor { MotionColor {} }
                                 }
 
                                 CyberText {
@@ -424,7 +491,7 @@ Item {
                                     // action name elides inside its own cell
                                     // instead of running under its neighbour.
                                     elide: Text.ElideRight
-                                    text: modelData.text
+                                    text: NotificationStore.collapse(modelData.text)
                                     role: "label"
                                     color: Theme.text
                                 }

@@ -57,7 +57,7 @@ Item {
         text: root.checked ? root.labelOn : root.labelOff
         role: "label"
         color: root.checked ? Theme.accent : Theme.textDim
-        Behavior on color { ColorAnimation { duration: Theme.durFast } }
+        Behavior on color { MotionColor {} }
     }
 
     NotchRect {
@@ -73,7 +73,7 @@ Item {
         strokeWidth: root.navFocused ? Theme.borderWidthStrong : Theme.borderWidth
         notch: 7
 
-        Behavior on strokeColor { ColorAnimation { duration: Theme.durFast } }
+        Behavior on strokeColor { MotionColor {} }
 
         // The filled half. Inset by the stroke so it sits inside the frame
         // rather than painting over it, and it carries the same cut as the
@@ -88,8 +88,8 @@ Item {
             strokeWidth: 0
             notch: 6
 
-            Behavior on x { NumberAnimation { duration: Theme.durFast; easing.type: Theme.easeSnap } }
-            Behavior on fillColor { ColorAnimation { duration: Theme.durFast } }
+            Behavior on x { MotionNumber { curve: Theme.curveEnter } }
+            Behavior on fillColor { MotionColor {} }
         }
     }
 

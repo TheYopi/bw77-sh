@@ -105,9 +105,18 @@ PanelWindow {
             ? DockMenuState.anchorY + DockMenuState.anchorHeight + Theme.space2
             : DockMenuState.anchorY - box.height - Theme.space2
 
-        autoDirection: Settings.dock.position === "top" ? "down"
-            : Settings.dock.position === "left" ? "right"
-            : Settings.dock.position === "right" ? "left" : "up"
+        /*
+         * Out of the dock, which is what the comment above always said and
+         * what the code did not do.
+         *
+         * It read `left -> "right"`, and under the old vocabulary "right" meant
+         * the menu STARTED to the right of its resting place and travelled
+         * left - back towards the dock. So a menu on a left-hand dock grew
+         * inward, against the edge it belongs to, rather than away from it.
+         * The vertical cases were right; the horizontal pair were inverted,
+         * which is exactly the confusion the mixed naming invited.
+         */
+        autoDirection: Theme.originOf("dock", "dock")
 
         // Centred on the icon along the dock. Every branch is clamped: a vertical dock on a narrow screen can push
         // the menu off the far edge just as easily as a horizontal one.

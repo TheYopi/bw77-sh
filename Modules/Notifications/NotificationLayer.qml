@@ -106,7 +106,11 @@ Scope {
             summary: notif.summary,
             body: notif.body,
             urgency: notif.urgency,
-            actions: (notif.actions || []).map(a => ({ text: a.text, invoke: () => {} })),
+            // The identifier rides along so the toast filters the buttons the
+            // same way on the way out as it did on the way in - otherwise the
+            // set could change shape mid-exit.
+            actions: (notif.actions || []).map(a => ({
+                text: a.text, identifier: a.identifier, invoke: () => {} })),
             closing: true
         };
 
@@ -258,6 +262,54 @@ Scope {
 
                     readonly property int edge: Settings.notifications.edgeMargin
 
+                    /*
+                     * --- the window has to cover the whole journey
+                     *
+                     * A toast travels in from the screen edge, and a Wayland
+                     * surface paints nothing outside its own bounds - so a
+                     * window that hugs the stack clips the toast for as long as
+                     * it is beyond the window's boundary. What you see is the
+                     * leading part of the toast with the rest cut off at a hard
+                     * line, exactly as the OSD did.
+                     *
+                     * The fix is the same one: the window reaches the screen
+                     * edge on the axis the toast travels along, and the spacing
+                     * that used to be the window's margin is applied to the
+                     * stack inside it instead. Nothing moves on screen; the
+                     * surface underneath simply extends far enough to draw the
+                     * approach.
+                     *
+                     * Worked out from the settings rather than from the toast's
+                     * own GlitchBox, because this decides the window's geometry
+                     * and the toasts do not exist while that is being decided.
+                     */
+                    readonly property string originEdge: {
+                        // Position wins; on Auto a toast has a corner of its
+                        // own, so that is what Auto means here rather than a
+                        // host's edge.
+                        const d = Theme.directionFor("notifications");
+                        if (d !== "auto") return Theme.edgeOf(d);
+                        return Theme.originOr("notifications",
+                            Theme.originForPlacement(Settings.notifications.position));
+                    }
+
+                    readonly property bool travelsVertically:
+                        win.originEdge === "top" || win.originEdge === "bottom"
+
+                    /*
+                     * Distance from the screen edge to the toast, on the axis it
+                     * travels along: the margin the window carried plus the slack
+                     * it kept inside itself. Both now live on this side of the
+                     * stack instead of being split between the two.
+                     */
+                    readonly property int travelGap: {
+                        switch (win.originEdge) {
+                        case "top":    return win.edge * 2 + (win.onTop ? win.barOffset : 0);
+                        case "bottom": return win.edge * 2 + (win.onTop ? 0 : win.barOffset);
+                        default:       return win.edge * 2;
+                        }
+                    }
+
                     anchors {
                         top: win.onTop
                         bottom: !win.onTop
@@ -266,18 +318,26 @@ Scope {
                     }
 
                     margins {
-                        top: win.edge + (win.onTop ? win.barOffset : 0)
-                        bottom: win.edge + (win.onTop ? 0 : win.barOffset)
-                        left: win.onCenter ? 0 : win.edge
-                        right: win.onCenter ? 0 : win.edge
+                        top: win.originEdge === "top" ? 0
+                            : win.edge + (win.onTop ? win.barOffset : 0)
+                        bottom: win.originEdge === "bottom" ? 0
+                            : win.edge + (win.onTop ? 0 : win.barOffset)
+                        left: win.originEdge === "left" ? 0
+                            : (win.onCenter ? 0 : win.edge)
+                        right: win.originEdge === "right" ? 0
+                            : (win.onCenter ? 0 : win.edge)
                     }
 
                     // Centre anchors both sides, so the window spans the screen and the
                     // stack is centred inside it instead of the window being centred.
                     implicitWidth: win.onCenter
                         ? 0
-                        : Settings.notifications.width + win.edge * 2
-                    implicitHeight: Math.max(1, stack.implicitHeight + win.edge * 2)
+                        : Settings.notifications.width
+                          + (win.travelsVertically ? win.edge * 2
+                                                   : win.travelGap + win.edge)
+                    implicitHeight: Math.max(1, stack.implicitHeight
+                        + (win.travelsVertically ? win.travelGap + win.edge
+                                                 : win.edge * 2))
                     color: "transparent"
                     exclusionMode: ExclusionMode.Ignore
 
@@ -288,10 +348,34 @@ Scope {
                     // would leave the stack stretched between both edges.
                     Column {
                         id: stack
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        // Plain y rather than conditional anchors, for the same reason
-                        // as the bar rule: an anchor set to undefined is not cleared.
-                        y: win.onTop ? 0 : parent.height - height
+
+                        /*
+                         * Plain x and y rather than conditional anchors, for the
+                         * same reason as the bar rule: an anchor set to undefined
+                         * is not cleared.
+                         *
+                         * On the axis the toast travels along the stack is held
+                         * `travelGap` from the origin edge - the spacing the
+                         * window's margin used to provide, now that the window
+                         * runs all the way to the screen edge. The other axis is
+                         * unchanged: centred when the window spans the display,
+                         * flush otherwise.
+                         */
+                        x: {
+                            if (win.travelsVertically)
+                                return Math.round((parent.width - width) / 2);
+                            return win.originEdge === "left"
+                                ? win.travelGap
+                                : parent.width - width - win.travelGap;
+                        }
+
+                        y: {
+                            if (!win.travelsVertically)
+                                return Math.round((parent.height - height) / 2);
+                            return win.originEdge === "top"
+                                ? win.travelGap
+                                : parent.height - height - win.travelGap;
+                        }
                         spacing: Theme.space2
 
                         Repeater {
@@ -299,6 +383,7 @@ Scope {
                             NotificationToast {
                                 required property var modelData
                                 notif: modelData
+                                originEdge: win.originEdge
                                 meta: modelData ? scope.metaFor(modelData.id) : ({})
                                 // Withdrawn by its sender: leave now rather than on the
                                 // countdown, but leave rather than vanish.
