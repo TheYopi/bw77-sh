@@ -231,7 +231,7 @@ QsSection {
                             role: "micro"
                             color: Theme.textMuted
 
-                            MouseArea {
+                            SoundArea {
                                 anchors.fill: parent
                                 anchors.margins: -5
                                 cursorShape: Qt.PointingHandCursor
@@ -258,7 +258,7 @@ QsSection {
                     Behavior on color { MotionColor {} }
                 }
 
-                MouseArea {
+                SoundArea {
                     id: settingsMouse
                     anchors.fill: parent
                     hoverEnabled: true
@@ -390,7 +390,7 @@ QsSection {
                     role: "micro"
                     color: Theme.textDanger
 
-                    MouseArea {
+                    SoundArea {
                         anchors.fill: parent
                         anchors.margins: -5
                         cursorShape: Qt.PointingHandCursor
@@ -427,7 +427,7 @@ QsSection {
                     Behavior on color { MotionColor {} }
                 }
 
-                MouseArea {
+                SoundArea {
                     id: btSettingsMouse
                     anchors.fill: parent
                     hoverEnabled: true

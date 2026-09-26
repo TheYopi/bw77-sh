@@ -250,7 +250,7 @@ PanelWindow {
                         color: Theme.warn
                     }
 
-                    MouseArea {
+                    SoundArea {
                         id: cardMouse
                         anchors.fill: parent
                         hoverEnabled: true

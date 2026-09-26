@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Services.Mpris
 import qs.Config
+import qs.Services
 import qs.Common
 import qs.Modules.Media
 
@@ -26,11 +27,7 @@ import qs.Modules.Media
 Item {
     id: root
 
-    readonly property MprisPlayer player: {
-        const list = Mpris.players.values;
-        if (list.length === 0) return null;
-        return list.find(p => p.playbackState === MprisPlaybackState.Playing) || list[0];
-    }
+    readonly property MprisPlayer player: Media.active
 
     // Set by the panel from the section's configured colour, the same as every
     // other section. Without it the media row would be the one section the

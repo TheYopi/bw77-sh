@@ -28,6 +28,20 @@ Item {
      * pass straight through to the children.
      */
     property bool captureClicks: true
+
+    /*
+     * Whether this widget wears the bar's frame at all.
+     *
+     * Distinct from the borderMode setting, which chooses WHEN the frame is
+     * drawn. A widget that sets this false has no frame to schedule: the
+     * workspace pips are the case, because they already draw their own
+     * outlined slabs and a second outline around the row put two borders and a
+     * pad of dead space around shapes that are themselves the widget. That is
+     * a property of what the widget draws, not a preference, so it is set in
+     * the widget rather than offered as an option that only ever has one
+     * sensible value.
+     */
+    property bool frame: true
     property bool active: false
     property color accentColor: Theme.accent
     property real hPadding: Settings.bar.widgetPadding
@@ -107,7 +121,7 @@ Item {
          * MouseArea never reports a press and this stays dark - which is
          * right: a clock that does nothing should not flash as though it had.
          */
-        pressed: mouse.pressed
+        pressed: root.frame && mouse.pressed
         pressColor: root.accentColor
 
         // A widget can override the global setting. "inherit" follows it.
@@ -127,6 +141,7 @@ Item {
          * borderMode of "always" set on that widget explicitly.
          */
         readonly property real strength: {
+            if (!root.frame) return 0;
             if (mode === "never") return 0;
             if (lit) return 1.0;
             return mode === "always" ? Settings.bar.widgetBorderOpacity : 0;
@@ -161,10 +176,18 @@ Item {
         height: parent.height
     }
 
-    MouseArea {
+    SoundArea {
         id: mouse
         anchors.fill: parent
         hoverEnabled: true
+
+        /*
+         * A widget that does nothing still tracks hover, so that a "hover"
+         * border can light under the cursor - but it must not announce itself
+         * as somewhere you could go. The clock is the case: it takes no
+         * buttons, so the click cue never fires there either.
+         */
+        navSound: root.interactive
         /*
          * Left enabled even when the widget is not interactive, so that hover
          * still registers and a "hover" border lights under the cursor. What a

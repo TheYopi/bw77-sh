@@ -58,6 +58,58 @@ Singleton {
         Quickshell.execDetached([cmd].concat(volumeArgs(cmd, vol)).concat([file]));
     }
 
+    /*
+     * --- UI feedback
+     *
+     * Navigation and click cues fire orders of magnitude more often than a
+     * notification does, and every one of them is a fork: play() hands the file
+     * to a player process. Hovering along a dock or holding an arrow key down a
+     * settings pane would otherwise spawn a process per frame.
+     *
+     * So they are rate limited here rather than at each of the forty-odd call
+     * sites. The navigation gap is the wider of the two because that is the one
+     * a moving pointer can machine-gun; a click is a deliberate act and its gap
+     * only exists to swallow double-fires from a single press.
+     *
+     * The clock is Date.now() rather than a Timer: a Timer per cue would be
+     * state to keep in sync, and this needs no wakeups, only a comparison.
+     */
+    property real _lastNav: 0
+    property real _lastClick: 0
+
+    readonly property int navGapMs: 45
+    readonly property int clickGapMs: 25
+
+    function playUi(file, last, gap) {
+        if (!Settings.notifications.uiSounds) return false;
+        if (!file || file === "") return false;
+
+        const now = Date.now();
+        if (now - last < gap) return false;
+
+        play(file, Settings.notifications.uiSoundVolume);
+        return true;
+    }
+
+    /*
+     * Hover or keyboard focus landing on something selectable.
+     *
+     * Called from the pointer areas of the shell's controls and from the two
+     * keyboard registries (CcNav, the Launcher), so moving by arrow key sounds
+     * exactly like moving by mouse - which is the point of the cue.
+     */
+    function playNavigation() {
+        if (playUi(Settings.notifications.soundFileNavigation, _lastNav, navGapMs))
+            _lastNav = Date.now();
+    }
+
+    // Activation: buttons, dock icons, bar widgets, tiles, wallpaper and theme
+    // swatches. Anything the user presses to make something happen.
+    function playClick() {
+        if (playUi(Settings.notifications.soundFileClick, _lastClick, clickGapMs))
+            _lastClick = Date.now();
+    }
+
     function playNotification(critical) {
         if (!Settings.notifications.sound) return;
         const file = critical

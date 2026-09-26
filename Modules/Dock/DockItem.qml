@@ -285,7 +285,7 @@ Item {
         }
     }
 
-    MouseArea {
+    SoundArea {
         id: mouse
         anchors.fill: parent
         hoverEnabled: true

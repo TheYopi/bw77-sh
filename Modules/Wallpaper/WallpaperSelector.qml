@@ -106,6 +106,44 @@ PanelWindow {
         { v: "none",   l: Settings.t("None") }
     ]
 
+    /*
+     * --- colorize strength
+     *
+     * Discrete rather than a slider, because this row is steppers and a
+     * slider in it would be the one control that does not step. Four stops is
+     * enough: the useful range of this effect is "a little", "clearly tinted"
+     * and "one colour", and a continuous control over that mostly offers the
+     * chance to sit between two of them.
+     */
+    readonly property var colorizeOptions: [
+        { v: 0,    l: Settings.t("Off") },
+        { v: 0.35, l: Settings.t("Light") },
+        { v: 0.65, l: Settings.t("Medium") },
+        { v: 1,    l: Settings.t("Full") }
+    ]
+
+    /*
+     * The stored strength snapped to whichever stop it is nearest.
+     *
+     * settings.json is editable by hand and the setting is a plain number, so
+     * a 0.5 in there is legitimate and the effect honours it exactly. The
+     * switch cannot show a value it has no stop for, and an unmatched `current`
+     * leaves CyberSelector showing its first option - which would say "Off"
+     * over a visibly tinted wallpaper. Snapping means it says the nearest
+     * true thing instead.
+     */
+    readonly property real colorizeCurrent: {
+        const v = Math.max(0, Math.min(1, Settings.wallpaper.colorize));
+        let best = root.colorizeOptions[0].v;
+        for (let i = 1; i < root.colorizeOptions.length; i++) {
+            if (Math.abs(root.colorizeOptions[i].v - v) < Math.abs(best - v))
+                best = root.colorizeOptions[i].v;
+        }
+        return best;
+    }
+
+    readonly property bool colorizeOn: !root.colorMode && root.colorizeCurrent > 0
+
     readonly property var colorStyleOptions: [
         { v: "solid",    l: Settings.t("Solid") },
         { v: "gradient", l: Settings.t("Gradient") }
@@ -122,6 +160,11 @@ PanelWindow {
             out.push("colour");
             if (root.gradient) out.push("colour2");
         } else {
+            out.push("colorize");
+            // Colour is what colorize tints with, so it joins the ring exactly
+            // when it starts having an effect - the same rule that keeps it
+            // out of the ring in image mode with the tint off.
+            if (root.colorizeOn) out.push("colour");
             out.push("grid");
         }
         return out;
@@ -141,6 +184,7 @@ PanelWindow {
         const at = root.ring.indexOf(root.focusedStop);
         const next = Math.max(0, Math.min(root.ring.length - 1,
                                           (at < 0 ? 0 : at) + delta));
+        if (root.ring[next] !== root.focusedStop) Sounds.playNavigation();
         root.focusedStop = root.ring[next];
     }
 
@@ -274,11 +318,31 @@ PanelWindow {
 
                 WallpaperSwitch {
                     width: 200
+                    label: Settings.t("Colorize")
+                    // Nothing to tint in colour mode - the wallpaper is
+                    // already the colour.
+                    enabled: !root.colorMode
+                    options: root.colorizeOptions
+                    current: root.colorizeCurrent
+                    focused: root.focusedStop === "colorize"
+                    accentColor: Theme.warn
+                    onFocusRequested: root.focusStop("colorize")
+                    onPicked: (v) => {
+                        Settings.wallpaper.colorize = v;
+                        root.focusStop("colorize");
+                    }
+                }
+
+                WallpaperSwitch {
+                    width: 200
                     // Becomes "From" once there is a second stop to tell it
                     // apart from, which is how the Control Center's colour
                     // editor labels the same pair.
                     label: root.gradient ? Settings.t("From") : Settings.t("Colour")
-                    enabled: root.colorMode
+                    // Live in colour mode, and in image mode once colorize is
+                    // asking it for a tint. This is the same control feeding
+                    // both, which is why there is no second colour to set.
+                    enabled: root.colorMode || root.colorizeOn
                     options: root.roleOptions
                     current: Settings.wallpaper.colorRole
                     focused: root.focusedStop === "colour"
@@ -466,7 +530,7 @@ PanelWindow {
                             }
                         }
 
-                        MouseArea {
+                        SoundArea {
                             id: tileMouse
                             anchors.fill: parent
                             hoverEnabled: true
@@ -688,6 +752,14 @@ PanelWindow {
                     cycle(root.transitionOptions, Settings.wallpaper.transition, delta,
                           (v) => Settings.wallpaper.transition = v);
                 return;
+            case "colorize":
+                // Cycled from the snapped value, not the raw setting: a
+                // hand-edited 0.5 has no stop to step from, and `cycle` would
+                // restart at one end of the list instead of moving from where
+                // the switch is showing.
+                cycle(root.colorizeOptions, root.colorizeCurrent, delta,
+                      (v) => Settings.wallpaper.colorize = v);
+                return;
             case "colour":
                 cycle(root.roleOptions, Settings.wallpaper.colorRole, delta, (v) => {
                     Settings.wallpaper.colorRole = v;
@@ -718,8 +790,19 @@ PanelWindow {
 
         function moveInGrid(delta) {
             if (root.files.length === 0) return;
-            root.highlight = Math.max(0, Math.min(root.files.length - 1,
-                                                  root.highlight + delta));
+            const next = Math.max(0, Math.min(root.files.length - 1,
+                                              root.highlight + delta));
+
+            /*
+             * The keyboard half of the navigation cue. It lives here rather
+             * than on `highlight` changing, because syncToCurrent() also
+             * writes highlight - on open, to point at the current wallpaper -
+             * and the selector would chirp at itself as it appeared. Guarded
+             * on a real move so a held arrow does not chatter at the edges.
+             */
+            if (next !== root.highlight) Sounds.playNavigation();
+
+            root.highlight = next;
             grid.positionViewAtIndex(root.highlight, GridView.Contain);
         }
 

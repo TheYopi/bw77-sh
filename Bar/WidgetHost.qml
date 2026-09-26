@@ -42,6 +42,7 @@ Loader {
         case "activeWindow":   return activeWindowC;
         case "clock":          return clockC;
         case "sysmon":         return sysmonC;
+        case "media":          return mediaC;
         case "notifications":  return notificationsC;
         case "tray":           return trayC;
         case "volume":         return volumeC;
@@ -79,6 +80,7 @@ Loader {
     Component { id: activeWindowC; ActiveWindow {} }
     Component { id: clockC;        Clock {} }
     Component { id: sysmonC;       SysMonWidget {} }
+    Component { id: mediaC;        MediaWidget {} }
     Component { id: notificationsC; Notifications {} }
     Component { id: trayC;         Tray {} }
     Component { id: volumeC;       Volume {} }

@@ -52,42 +52,30 @@ BarItem {
         }
 
         /*
-         * The count, in its own frame when there is one.
+         * The count, beside the bell rather than boxed.
          *
-         * A bare number next to the bell read as part of the clock two widgets
-         * along. Boxed, it reads as a badge belonging to the bell - and the box
-         * disappears entirely at zero rather than sitting there saying nothing,
-         * which is what the bell on its own is already for.
+         * It used to sit in its own NotchRect - a frame inside the widget's
+         * own frame, which is two borders deep for one number and reads as a
+         * separate thing parked next to the bell instead of as the bell's
+         * count. The original worry was that a bare number would be mistaken
+         * for part of the clock two widgets along; the widget's own outline
+         * and the tight spacing against the glyph already answer that, and the
+         * badge was solving it twice.
+         *
+         * It still disappears entirely at zero: the quiet bell is what says
+         * "nothing here", and a "0" beside it would be repeating that with an
+         * extra character of bar width.
          */
-        NotchRect {
+        CyberText {
             anchors.verticalCenter: parent.verticalCenter
             visible: root.count > 0
-            width: visible ? Math.max(18, badge.implicitWidth + Theme.space2) : 0
-            height: 16
-            fillColor: Theme.alpha(Theme.accent, 0.22)
-            strokeColor: Theme.alpha(Theme.accent, 0.8)
-            notch: 4
-            notchTopLeft: false
-            notchTopRight: false
-            notchBottomRight: true
-            notchBottomLeft: false
-
-            Behavior on width {
-                enabled: !Theme.reducedMotion
-                MotionNumber {}
-            }
-
-            CyberText {
-                id: badge
-                anchors.centerIn: parent
-                // Past ninety-nine the exact figure has stopped being useful and
-                // the widget would start pushing its neighbours around.
-                text: root.count > 99 ? "99+" : String(root.count)
-                role: "micro"
-                sizeOverride: root.cfgFontSize
-                weightOverride: root.cfgFontWeight
-                color: root.cfgColor(Theme.accent)
-            }
+            // Past ninety-nine the exact figure has stopped being useful and
+            // the widget would start pushing its neighbours around.
+            text: root.count > 99 ? "99+" : String(root.count)
+            role: "micro"
+            sizeOverride: root.cfgFontSize
+            weightOverride: root.cfgFontWeight
+            color: root.cfgColor(root.accentColor)
         }
     }
 }

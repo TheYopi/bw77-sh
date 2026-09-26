@@ -79,6 +79,8 @@ Singleton {
         "Anything without a translation stays in English": "Всё без перевода остаётся на английском",
         "Always keeps them visible at reduced opacity and goes solid on hover": "Всегда видимы с пониженной непрозрачностью, при наведении становятся сплошными",
         "Always visible": "Всегда видима",
+        "All workspaces": "Все рабочие столы",
+        "Current only": "Только текущий",
         "Always visible reserves screen space; the others reveal on a hot edge": "«Всегда видима» резервирует место на экране; остальные появляются у горячего края",
         "Angle": "Угол",
         "Animation": "Анимация",
@@ -145,6 +147,15 @@ Singleton {
         "Calendar": "Календарь",
         "Cancel": "Отмена",
         "Categories": "Категории",
+        "Colorize": "Тонирование",
+        "Light": "Слабое",
+        "Medium": "Среднее",
+        "Full": "Полное",
+        "Cover art": "Обложка",
+        "Transport buttons": "Кнопки управления",
+        "Track name": "Название трека",
+        "Maximum characters": "Максимум символов",
+        "Hide when nothing is playing": "Скрывать, когда ничего не играет",
         "Category": "Категория",
         "Center": "По центру",
         "Change": "Изменить",
@@ -335,6 +346,13 @@ Singleton {
         "No signal": "Нет сигнала",
         "None": "Нет",
         "Normal sound file": "Обычный звуковой файл",
+        "Interface sounds": "Звуки интерфейса",
+        "Interface volume": "Громкость интерфейса",
+        "Play interface sounds": "Воспроизводить звуки интерфейса",
+        "Navigation on hover or keyboard focus, and a click on activation": "Навигация при наведении или фокусе с клавиатуры и щелчок при нажатии",
+        "Set separately from notifications, which play far less often": "Задаётся отдельно от уведомлений, которые звучат намного реже",
+        "Navigation sound file": "Звуковой файл навигации",
+        "Click sound file": "Звуковой файл щелчка",
         "Nothing connected": "Ничего не подключено",
         "Nothing here": "Здесь пусто",
         "Nothing selected": "Ничего не выбрано",
@@ -1402,6 +1420,26 @@ Singleton {
                 property string soundCommand: "pw-play"
                 property string soundFileNormal: ""
                 property string soundFileCritical: ""
+
+                /*
+                 * UI feedback sounds, separate from the notification cues.
+                 *
+                 * They share the player and the file-path plumbing above - one
+                 * command to configure, not three - but carry their own toggle
+                 * and their own volume, because these fire hundreds of times an
+                 * hour and a notification chime's level would be punishing at
+                 * that rate.
+                 *
+                 * Both default to empty, so the shell stays silent until files
+                 * are chosen. That matters more here than for notifications:
+                 * nobody opts in to a sound on every hover by accident.
+                 */
+                property bool uiSounds: true
+                property real uiSoundVolume: 0.3
+                // Hover/focus move, mouse or keyboard.
+                property string soundFileNavigation: ""
+                // Activation of a button, dock icon, bar widget, tile or swatch.
+                property string soundFileClick: ""
                 property string animation: "glitch"  // glitch | slide | fade
                 property bool doNotDisturb: false
             }
@@ -1416,6 +1454,23 @@ Singleton {
                 property string colorRole2: "bgOverlay"
                 property string colorCustom2: ""
                 property int gradientAngle: 160
+
+                /*
+                 * --- colorize, for image wallpapers
+                 *
+                 * Strength from 0 (off) to 1 (the image reduced to the Colour
+                 * above, as a single hue). Held as a number rather than a
+                 * bool + amount pair because the two were never independent:
+                 * "off" is just zero strength, and one value cannot get out of
+                 * step with itself.
+                 *
+                 * The tint deliberately has no colour setting of its own. It
+                 * reads `colorRole`/`colorCustom` - the same Colour the solid
+                 * and gradient modes use - so a palette change repaints a
+                 * colorized photo with everything else, and there is one
+                 * colour to set rather than two that can disagree.
+                 */
+                property real colorize: 0
 
                 property string folder: `${Quickshell.env("HOME")}/Pictures/Wallpapers`
                 property string current: ""

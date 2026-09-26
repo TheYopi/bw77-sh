@@ -70,8 +70,27 @@ Item {
                     root.rebuild(e.WorkspacesChanged.workspaces);
                 } else if (e.WorkspaceActivated) {
                     const id = e.WorkspaceActivated.id;
+
+                    /*
+                     * `focused` is global, `active` is per output.
+                     *
+                     * This used to set active the same way as focused, which
+                     * quietly cleared the active flag on every other monitor's
+                     * workspaces until the next full WorkspacesChanged rebuilt
+                     * them. Nothing read the flag closely enough to notice
+                     * before; the bar's compact workspace style does, because
+                     * on a monitor that does not hold the keyboard focus it is
+                     * the only thing that can say which workspace is showing
+                     * there.
+                     */
+                    const target = root.workspaces.find(w => w.id === id);
+                    const output = target ? target.output : "";
+
                     root.workspaces = root.workspaces.map(w =>
-                        Object.assign({}, w, { focused: w.id === id, active: w.id === id }));
+                        Object.assign({}, w, {
+                            focused: w.id === id,
+                            active: w.output === output ? w.id === id : w.active
+                        }));
                     root.focusedWorkspaceId = id;
                 } else if (e.KeyboardLayoutsChanged) {
                     const k = e.KeyboardLayoutsChanged.keyboard_layouts;

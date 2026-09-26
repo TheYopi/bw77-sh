@@ -83,7 +83,7 @@ Item {
         Behavior on color { MotionColor {} }
     }
 
-    MouseArea {
+    SoundArea {
         id: mouse
         anchors.fill: parent
         hoverEnabled: true

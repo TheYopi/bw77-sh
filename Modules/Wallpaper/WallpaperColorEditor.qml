@@ -28,13 +28,37 @@ Column {
 
     readonly property bool gradient: Settings.wallpaper.colorStyle === "gradient"
 
+    /*
+     * Show only the single colour, for the image mode's colorize tint.
+     *
+     * The tint reads the same `colorRole`/`colorCustom` pair as the solid
+     * fill, so this is the same editor rather than a second one - but style,
+     * angle and the second stop are all about a gradient the tint has no
+     * concept of, and offering them here would be offering controls that do
+     * nothing to the wallpaper on screen.
+     *
+     * Off by default, so colour mode is untouched.
+     */
+    property bool tintOnly: false
+
+    // What the gradient controls key off. Folded through tintOnly in one place
+    // so a future gradient-adjacent control cannot forget to check it.
+    readonly property bool showGradient: root.gradient && !root.tintOnly
+
     width: parent ? parent.width : 0
     spacing: Theme.space2
 
     // --- live preview
     NotchRect {
+        /*
+         * Dropped in tint mode, where it would be a 90px swatch of a colour
+         * the row below already shows in a 40px one - and this pane hands
+         * whatever height is left to the image grid, so every row here is
+         * taken off the thumbnails.
+         */
+        visible: !root.tintOnly
         width: parent.width
-        height: 90
+        height: visible ? 90 : 0
         fillColor: root.fillA
         strokeColor: Theme.border
         notch: Theme.notch
@@ -51,7 +75,10 @@ Column {
         Item {
             anchors.fill: parent
             clip: true
-            visible: root.gradient
+            // The preview shows a flat swatch in tint mode - there is no
+            // gradient to preview, and drawing one would advertise a control
+            // that is not on screen.
+            visible: root.showGradient
 
             Item {
                 anchors.centerIn: parent
@@ -81,6 +108,7 @@ Column {
     }
 
     Row {
+        visible: !root.tintOnly
         width: parent.width
         spacing: Theme.space2
 
@@ -103,7 +131,7 @@ Column {
     // --- the two colour stops
     Repeater {
         model: [
-            { label: root.gradient ? Settings.t("From") : Settings.t("Colour"),
+            { label: root.showGradient ? Settings.t("From") : Settings.t("Colour"),
               roleKey: "colorRole", customKey: "colorCustom", always: true },
             { label: Settings.t("To"),
               roleKey: "colorRole2", customKey: "colorCustom2", always: false }
@@ -111,7 +139,7 @@ Column {
 
         Row {
             required property var modelData
-            visible: modelData.always || root.gradient
+            visible: modelData.always || root.showGradient
             width: root.width
             spacing: Theme.space2
 
@@ -181,7 +209,7 @@ Column {
     }
 
     Row {
-        visible: root.gradient
+        visible: root.showGradient
         width: parent.width
         spacing: Theme.space2
 

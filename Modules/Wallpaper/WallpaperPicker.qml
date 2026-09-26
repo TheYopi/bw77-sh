@@ -172,6 +172,49 @@ Item {
         }
 
         /*
+         * --- colorize
+         *
+         * A slider here where the wallpaper menu has a four-stop stepper. The
+         * menu's row is steppers and a slider in it would be the one control
+         * that does not step; this pane is already sliders, and the setting
+         * itself is continuous - so each surface offers the shape that fits
+         * it, over one value.
+         */
+        Row {
+            visible: Settings.wallpaper.mode === "image"
+            width: parent.width
+            spacing: Theme.space2
+
+            CyberText {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 90
+                text: Settings.t("Colorize")
+                role: "label"
+                color: Theme.text
+            }
+
+            CyberSlider {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 260
+                from: 0; to: 1; stepSize: 0.05
+                value: Settings.wallpaper.colorize
+                decimals: 0
+                displayScale: 100
+                suffix: "%"
+                onMoved: (v) => Settings.wallpaper.colorize = v
+            }
+        }
+
+        // The tint reads the same colour as the solid fill, so this is the
+        // same editor with everything gradient-shaped folded away.
+        WallpaperColorEditor {
+            visible: Settings.wallpaper.mode === "image"
+                && Settings.wallpaper.colorize > 0
+            width: parent.width
+            tintOnly: true
+        }
+
+        /*
          * --- colour mode controls
          *
          * Given the rest of the pane and allowed to scroll inside it, rather
@@ -318,7 +361,7 @@ Item {
                     }
                 }
 
-                MouseArea {
+                SoundArea {
                     id: thumbMouse
                     anchors.fill: parent
                     hoverEnabled: true

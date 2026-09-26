@@ -27,26 +27,67 @@ Item {
     property bool caps: false
     property color color: Theme.text
     property real sizeOverride: 0
+    property int weightOverride: 0
 
     // How long the text rests at each end before travelling back.
     property int dwell: 1400
+
+    /*
+     * The pause at the START of the run, separately from the one at the far
+     * end.
+     *
+     * The two ends are not equivalent. Arriving back at the first character is
+     * arriving back at the thing the label is for - the artist, the sender,
+     * the stream name - and that is the moment worth holding still, long
+     * enough that someone glancing at the bar reads it without waiting for a
+     * cycle. The pause at the far end only has to be long enough to finish the
+     * last word before the label travels back.
+     *
+     * Defaults to `dwell`, so nothing that does not set it changes.
+     */
+    property int startDwell: root.dwell
 
     // Travel speed in pixels per second. Slow enough to read while it moves.
     property real speed: 30
 
     implicitHeight: label.implicitHeight
-    implicitWidth: label.implicitWidth
+    // Measured, not asked of the label, for the same reason `overflow` is -
+    // an eliding Text understates what it wants.
+    implicitWidth: Math.ceil(natural.advanceWidth)
 
     clip: true
 
-    readonly property real overflow: Math.max(0, label.implicitWidth - width)
+    /*
+     * --- the natural width is measured separately, and that is the whole fix
+     *
+     * This used to read `label.implicitWidth`, and it latched: a Text with
+     * `elide` set reports its implicit width against the width it has been
+     * given rather than the width the string wants, so the moment the label
+     * was eliding it claimed to fit. Overflow computed to zero, `scrolling`
+     * stayed false, elide stayed on, and the measurement went on confirming
+     * itself. The label sat still with an ellipsis on the end - exactly the
+     * state it was supposed to detect and escape.
+     *
+     * Measuring with TextMetrics breaks the circle, because it has no width to
+     * be constrained by. It carries the label's own font, so what is measured
+     * is what is drawn.
+     */
+    TextMetrics {
+        id: natural
+        font: label.font
+        text: root.text
+    }
+
+    readonly property real overflow: Math.max(0, natural.advanceWidth - width)
     readonly property bool scrolling: overflow > 0 && !Theme.reducedMotion
 
     CyberText {
         id: label
 
         y: 0
-        width: root.scrolling ? implicitWidth : root.width
+        // Wide enough for the whole string while travelling, so nothing is cut
+        // off the end of a label that is being scrolled to reveal that end.
+        width: root.scrolling ? Math.ceil(natural.advanceWidth) + 2 : root.width
         height: root.height
 
         text: root.text
@@ -54,6 +95,7 @@ Item {
         caps: root.caps
         color: root.color
         sizeOverride: root.sizeOverride
+        weightOverride: root.weightOverride
 
         // Only elide when it is not going to travel - eliding a scrolling label
         // would put an ellipsis in the middle of the thing being scrolled to.
@@ -71,7 +113,7 @@ Item {
         running: root.scrolling
         loops: Animation.Infinite
 
-        PauseAnimation { duration: root.dwell }
+        PauseAnimation { duration: root.startDwell }
 
         NumberAnimation {
             target: label

@@ -87,11 +87,7 @@ Scope {
     // The player the media keys act on, chosen the way Quick Settings chooses
     // it: whichever is playing, else the first. playerctl without --player
     // lands on the same one in practice.
-    readonly property MprisPlayer player: {
-        const list = Mpris.players.values;
-        return list.find(p => p.playbackState === MprisPlaybackState.Playing)
-            || list[0] || null;
-    }
+    readonly property MprisPlayer player: Media.active
 
     /*
      * Lock keys are watched rather than pushed, so the watcher only runs while

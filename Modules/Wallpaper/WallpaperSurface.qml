@@ -102,31 +102,71 @@ Item {
         cache: true
         source: root.colorMode ? "" : root.src
         opacity: 1
-        visible: !root.colorMode && root.blurAmount <= 0
+        visible: !root.colorMode && !root.effected
     }
 
     /*
-     * Blur is a separate pass over the same image, used by the overview
-     * backdrop so workspace thumbnails stay readable against it.
+     * --- colorize
+     *
+     * Strength 0..1, tinting the image with the same Colour the solid and
+     * gradient modes use. Clamped here rather than trusted from settings,
+     * because hand-editing settings.json is a supported way to configure this
+     * shell and MultiEffect does not sanity-check what it is handed.
+     */
+    readonly property real colorizeAmount: root.colorMode ? 0
+        : Math.max(0, Math.min(1, Settings.wallpaper.colorize))
+
+    // Whether anything needs the effect pass at all.
+    readonly property bool effected: !root.colorMode
+        && (root.blurAmount > 0 || root.colorizeAmount > 0)
+
+    /*
+     * Blur and colorize are one pass over the same image.
+     *
+     * Blur is used by the overview backdrop so workspace thumbnails stay
+     * readable against it; colorize is a desktop look. They share a MultiEffect
+     * rather than stacking two, because each one costs a full-screen offscreen
+     * buffer and stacking them would pay twice for what one shader already does
+     * in a single sampling pass.
      *
      * Behind a Loader, because assigning an item as a MultiEffect source forces
      * `layer.enabled` on it - a full-screen offscreen buffer, allocated and
      * held for as long as the effect exists. Setting `visible: false` and
-     * `blurEnabled: false` does not undo that. The ordinary background surface
-     * has blurAmount 0 and never blurs, so it was paying for a buffer it could
-     * not use; now it does not build the effect at all.
+     * `blurEnabled: false` does not undo that. A surface with no blur and no
+     * tint does not build the effect at all.
      */
     Loader {
         anchors.fill: parent
-        active: !root.colorMode && root.blurAmount > 0
+        active: root.effected
 
         sourceComponent: MultiEffect {
             source: current
-            blurEnabled: true
+
+            blurEnabled: root.blurAmount > 0
             blur: root.blurAmount
             // blurMax sizes the downsample pyramid, so a fixed 64 pays for the
             // largest blur the effect can do no matter what is asked for.
             blurMax: Math.max(8, Math.ceil(root.blurAmount * 32))
+
+            /*
+             * --- colorization on its own, with no saturation alongside it
+             *
+             * This first paired `saturation: -amount` with the colorization,
+             * reasoning that Photoshop's Colorize throws the original hue away
+             * and a tint laid over the existing colours is not the same thing.
+             * The result ignored the chosen colour completely: the image went
+             * monochrome and stayed monochrome whatever the Colour was set to.
+             *
+             * MultiEffect applies saturation AFTER colorization, so the two
+             * were fighting in that order - the tint went on, and then the
+             * desaturation took it straight back off, leaving only the
+             * luminance it had been multiplied into. The desaturation was
+             * never needed anyway: colorization keys off luminance, so it has
+             * already discarded the source hue by the time it picks a colour.
+             */
+            colorization: root.colorizeAmount
+            colorizationColor: root.fillA
+
             autoPaddingEnabled: false
         }
     }

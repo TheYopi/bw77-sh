@@ -98,6 +98,23 @@ Singleton {
     property var upHistory: []
 
     readonly property string memUsedLabel: formatBytes(memUsedKb * 1024, 1)
+
+    /*
+     * Memory in use, always in gigabytes, always to a tenth: "12.1 G".
+     *
+     * formatBytes picks its own unit, which is right where the figure could be
+     * any size - a network rate, a file - but wrong for system memory on the
+     * bar. It meant the reading changed width and unit as the machine filled
+     * up ("968M" then "1.1G"), so the column beside it had to be sized for a
+     * unit it would almost never show, and the one number people actually
+     * compare against the RAM they know they bought kept changing shape.
+     *
+     * Fixed at G because that is the unit the machine is sold in. Under a
+     * gigabyte this reads "0.4 G", which is the honest answer at the scale the
+     * rest of the bar is using.
+     */
+    readonly property string memUsedGbLabel:
+        (memUsedKb / 1048576).toFixed(1) + " G"
     readonly property string memTotalLabel: formatBytes(memTotalKb * 1024, 1)
     readonly property string downLabel: formatRate(down)
     readonly property string upLabel: formatRate(up)

@@ -173,7 +173,7 @@ Item {
                     }
                 }
 
-                MouseArea {
+                SoundArea {
                     id: winMouse
                     anchors.fill: parent
                     hoverEnabled: true
@@ -269,7 +269,7 @@ Item {
                     }
                 }
 
-                MouseArea {
+                SoundArea {
                     id: actMouse
                     anchors.fill: parent
                     hoverEnabled: true
@@ -347,7 +347,7 @@ Item {
                     }
                 }
 
-                MouseArea {
+                SoundArea {
                     id: actionMouse
                     anchors.fill: parent
                     hoverEnabled: true

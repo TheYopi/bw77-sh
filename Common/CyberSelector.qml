@@ -95,7 +95,7 @@ Item {
 
     // Wheel and a click on the label both advance, so the arrows are a hint
     // rather than the only way in.
-    MouseArea {
+    SoundArea {
         id: hover
         anchors.fill: parent
         hoverEnabled: true

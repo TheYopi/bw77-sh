@@ -76,10 +76,10 @@ BarItem {
                     : modelData === "mem" ? Settings.t("MEM") : Settings.t("TEMP")
 
                 // Memory reads as what is in use rather than as a percentage:
-                // "7.4G" is the figure people check against the machine they
+                // "12.1 G" is the figure people check against the machine they
                 // know they have, and the percentage is in the popup.
                 readonly property string reading: modelData === "cpu" ? SysMon.cpu + "%"
-                    : modelData === "mem" ? SysMon.memUsedLabel
+                    : modelData === "mem" ? SysMon.memUsedGbLabel
                     : SysMon.temp + "\u00B0"
 
                 visible: on
@@ -109,12 +109,39 @@ BarItem {
                     color: root.cfgColor(Theme.textMuted)
                 }
 
+                /*
+                 * --- the reading's column is measured, not guessed
+                 *
+                 * The width has to be reserved: letting it size to content
+                 * made every widget to the left of this one jump on each
+                 * update. It used to be a flat 38px for all three readouts,
+                 * which was a number chosen for "100%" at the font size of the
+                 * day - so memory, the one reading with a unit after it, had
+                 * its "G" clipped off, and any bar whose font slider had been
+                 * touched was reserving the wrong amount for everything.
+                 *
+                 * Measuring the widest string each readout can actually
+                 * produce fixes both at once, and costs three TextMetrics that
+                 * only re-measure when the font or the total memory changes.
+                 * Memory's sample is built from this machine's own RAM, so a
+                 * 32G box reserves for "32.0 G" rather than for some worst case
+                 * it will never print.
+                 */
+                TextMetrics {
+                    id: reserve
+                    font: readout.font
+                    text: metric.modelData === "cpu" ? "100%"
+                        : metric.modelData === "mem"
+                            ? (SysMon.memTotalKb / 1048576).toFixed(1) + " G"
+                            : "-40\u00B0"
+                }
+
                 CyberText {
+                    id: readout
                     height: parent.height
-                    // Reserved width for the widest reading ("100%", "-40C").
-                    // Letting this size to content made every widget to the
-                    // left jump on each two-second update.
-                    width: 38
+                    // Two pixels of slack: trailing letter-spacing is part of
+                    // the advance on some faces and not others.
+                    width: Math.ceil(reserve.advanceWidth) + 2
                     horizontalAlignment: Text.AlignRight
                     text: metric.reading
                     role: "mono"

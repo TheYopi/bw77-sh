@@ -22,7 +22,7 @@ PaneScroll {
 
     readonly property var available: [
         "controlCenter", "quickSettings", "launcher", "workspaces", "activeWindow", "clock", "sysmon",
-        "tray", "volume", "network", "notifications", "battery", "keyboardLayout",
+        "media", "tray", "volume", "network", "notifications", "battery", "keyboardLayout",
         "session", "spacer"
     ]
 
@@ -544,7 +544,7 @@ PaneScroll {
                                             role: "icon"
                                             color: modelData.danger ? Theme.danger : Theme.accent
 
-                                            MouseArea {
+                                            SoundArea {
                                                 anchors.fill: parent
                                                 anchors.margins: -4
                                                 cursorShape: Qt.PointingHandCursor

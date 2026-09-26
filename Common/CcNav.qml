@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import qs.Services
 
 /*
  * Keyboard focus and tip routing for the Control Center.
@@ -135,6 +136,26 @@ Singleton {
 
     // --------------------------------------------------------------- registry
 
+    /*
+     * True when `item` sits inside a registered settings row.
+     *
+     * Those rows announce navigation themselves, through setActive(), and that
+     * one call covers both the pointer and the arrow keys. The controls inside
+     * them - toggles, steppers, buttons - are SoundAreas too and would sound a
+     * second time for the same row, which is wrong twice over: moving from a
+     * row's label onto its own toggle is not navigating anywhere, and whether
+     * the two fired close enough together to be swallowed by the rate limiter
+     * depended on how fast the pointer happened to be travelling.
+     *
+     * Deciding it by ancestry rather than by comparing against activeRow keeps
+     * it independent of which of the two handlers Qt happens to run first.
+     */
+    function insideRow(item) {
+        for (let p = item; p; p = p.parent)
+            if (_rows.indexOf(p) >= 0) return true;
+        return false;
+    }
+
     function register(row) {
         if (_rows.indexOf(row) < 0) _rows.push(row);
     }
@@ -185,6 +206,18 @@ Singleton {
     }
 
     function setActive(row, byKeyboard) {
+        /*
+         * The navigation cue for the whole Control Center, mouse and keyboard
+         * alike, because both arrive here - hoverEntered and the arrow keys
+         * call the same function. Putting it in the rows instead would have
+         * meant a sound on hover and silence on Tab, which is the opposite of
+         * what the cue is for.
+         *
+         * Guarded on an actual change: setActive is also called to re-assert
+         * the current row when a pane rebuilds under a resting pointer.
+         */
+        if (row && row !== activeRow) Sounds.playNavigation();
+
         keyboardMode = byKeyboard === true;
         if (keyboardMode) {
             // Freeze the reference point. Any later report differing from this

@@ -443,7 +443,7 @@ PanelWindow {
                                 Behavior on color { MotionColor {} }
                             }
 
-                            MouseArea {
+                            SoundArea {
                                 id: railMouse
                                 anchors.fill: parent
                                 enabled: !entry.isGroup
@@ -610,7 +610,7 @@ PanelWindow {
                             }
                         }
 
-                        MouseArea {
+                        SoundArea {
                             id: resetMouse
                             anchors.fill: parent
                             hoverEnabled: true
@@ -644,7 +644,7 @@ PanelWindow {
                             }
                         }
 
-                        MouseArea {
+                        SoundArea {
                             id: closeMouse
                             anchors.fill: parent
                             hoverEnabled: true

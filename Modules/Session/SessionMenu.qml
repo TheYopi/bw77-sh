@@ -156,7 +156,8 @@ PanelWindow {
                             }
                         }
 
-                        MouseArea {
+                        SoundArea {
+                            navSound: false
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
@@ -186,6 +187,10 @@ PanelWindow {
     }
 
     property int selectedIndex: 0
+
+    // Hover writes this too - the tiles' SoundArea has navSound off - so one
+    // handler covers arrow keys and the pointer without doubling up.
+    onSelectedIndexChanged: Sounds.playNavigation()
 
     // Keyboard driving: arrows move, Enter fires, Escape closes.
     Item {

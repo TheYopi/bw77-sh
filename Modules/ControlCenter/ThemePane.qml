@@ -158,7 +158,7 @@ PaneScroll {
 
                             Behavior on strokeColor { MotionColor {} }
 
-                            MouseArea {
+                            SoundArea {
                                 id: swatchMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
@@ -209,7 +209,7 @@ PaneScroll {
                                 color: roleRow.overridden ? Theme.warn : Theme.textMuted
                             }
 
-                            MouseArea {
+                            SoundArea {
                                 id: resetMouse
                                 anchors.fill: parent
                                 enabled: roleRow.overridden

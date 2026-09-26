@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Services.Mpris
 import qs.Config
+import qs.Services
 import qs.Modules.Desktop
 import qs.Modules.Media
 
@@ -23,12 +24,7 @@ WidgetFrame {
 
     property var config: ({})
 
-    readonly property MprisPlayer player: {
-        const list = Mpris.players.values;
-        if (list.length === 0) return null;
-        // Prefer whatever is actually playing over the first registered player.
-        return list.find(p => p.playbackState === MprisPlaybackState.Playing) || list[0];
-    }
+    readonly property MprisPlayer player: Media.active
 
     MediaBody {
         anchors.fill: parent

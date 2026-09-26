@@ -164,7 +164,11 @@ PanelWindow {
         lastCursorX = -1;
         lastCursorY = -1;
         if (results.length === 0) return;
-        selectedIndex = Math.max(0, Math.min(results.length - 1, index));
+
+        // Guarded on a real move - see the Launcher's copy for why.
+        const next = Math.max(0, Math.min(results.length - 1, index));
+        if (next !== selectedIndex) Sounds.playNavigation();
+        selectedIndex = next;
     }
 
     // True only when the cursor actually travelled, not when the grid

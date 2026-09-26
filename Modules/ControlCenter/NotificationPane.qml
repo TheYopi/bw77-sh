@@ -190,6 +190,7 @@ PaneScroll {
             required property var modelData
             label: modelData.label
             alternate: true
+            opacity: Settings.notifications.sound ? 1 : 0.45
 
             NotchRect {
                 width: 320
@@ -208,6 +209,104 @@ PaneScroll {
                     font.pixelSize: Theme.fontSmall
                     selectionColor: Theme.accent
                     onEditingFinished: Settings.notifications[modelData.key] = text
+                }
+            }
+        }
+    }
+
+    /*
+     * --- interface sounds
+     *
+     * A section of their own rather than two more entries beside the
+     * notification files, because they are a different kind of thing: these
+     * play in response to the user's own hands, hundreds of times an hour, and
+     * so they carry their own enable and their own volume. Sharing the player
+     * setting above is deliberate - one command to get right, not two.
+     */
+    SectionHeader {
+        width: pane.innerWidth
+        title: Settings.t("Interface sounds")
+        accentColor: Theme.accent
+        glitch: false
+    }
+
+    SettingRow {
+        label: Settings.t("Play interface sounds")
+        description: Settings.t("Navigation on hover or keyboard focus, and a click on activation")
+        CyberToggle {
+            checked: Settings.notifications.uiSounds
+            onToggled: (v) => Settings.notifications.uiSounds = v
+        }
+    }
+
+    SettingRow {
+        opacity: Settings.notifications.uiSounds ? 1 : 0.45
+        label: Settings.t("Interface volume")
+        description: Settings.t("Set separately from notifications, which play far less often")
+        CyberSlider {
+            width: 240
+            from: 0; to: 1; stepSize: 0.05
+            value: Settings.notifications.uiSoundVolume
+            decimals: 0
+            displayScale: 100
+            suffix: "%"
+            onMoved: (v) => Settings.notifications.uiSoundVolume = v
+        }
+    }
+
+    Repeater {
+        model: [
+            { label: Settings.t("Navigation sound file"), key: "soundFileNavigation" },
+            { label: Settings.t("Click sound file"), key: "soundFileClick" }
+        ]
+
+        SettingRow {
+            id: uiFileRow
+            required property var modelData
+            label: modelData.label
+            alternate: true
+            opacity: Settings.notifications.uiSounds ? 1 : 0.45
+
+            Row {
+                spacing: Theme.space2
+
+                NotchRect {
+                    width: 320
+                    height: 28
+                    anchors.verticalCenter: parent.verticalCenter
+                    fillColor: Theme.alpha(Theme.bgDeep, 0.9)
+                    strokeColor: Theme.border
+                    notch: 5
+
+                    TextInput {
+                        anchors.fill: parent
+                        anchors.margins: Theme.space2
+                        verticalAlignment: Text.AlignVCenter
+                        text: Settings.notifications[uiFileRow.modelData.key]
+                        color: Theme.text
+                        font.family: Theme.fontMono
+                        font.pixelSize: Theme.fontSmall
+                        selectionColor: Theme.accent
+                        onEditingFinished:
+                            Settings.notifications[uiFileRow.modelData.key] = text
+                    }
+                }
+
+                /*
+                 * These get a preview button where the notification files do
+                 * not, because a cue this short is chosen by how it sits
+                 * against the others - and picking one by opening a file
+                 * manager and double-clicking is a poor way to judge that.
+                 *
+                 * It plays at the interface volume, so the preview is the
+                 * thing itself rather than a louder relative of it.
+                 */
+                CyberButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Settings.t("Test")
+                    enabled: Settings.notifications[uiFileRow.modelData.key] !== ""
+                    onClicked: Sounds.play(Settings.notifications[uiFileRow.modelData.key],
+                                           Settings.notifications.uiSoundVolume)
                 }
             }
         }

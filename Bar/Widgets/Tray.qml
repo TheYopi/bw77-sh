@@ -46,6 +46,23 @@ BarItem {
                 height: root.iconSize
                 anchors.verticalCenter: parent.verticalCenter
 
+                /*
+                 * --- one brightness, always
+                 *
+                 * Both of these used to fade between 0.85 and 1.0 on
+                 * containsMouse, and it did not work: clicking an icon opens a
+                 * menu that takes the pointer grab, so the MouseArea never saw
+                 * the pointer leave and the icon stayed lit after the menu had
+                 * gone. The tray ended up as a row of icons at two different
+                 * brightnesses recording which ones had been clicked since the
+                 * bar last reloaded.
+                 *
+                 * The hover cue was redundant anyway - BarItem already draws a
+                 * frame around the whole tray under the cursor - so the fix is
+                 * to drop the state rather than to chase the missing exit
+                 * event. Tray icons are application identity, not shell
+                 * chrome; they hold still.
+                 */
                 IconImage {
                     id: icon
                     anchors.fill: parent
@@ -53,9 +70,6 @@ BarItem {
                     // Hidden when colourising: MultiEffect draws the result and
                     // showing both would double up the alpha.
                     visible: !Settings.bar.trayColorize
-                    opacity: itemMouse.containsMouse ? 1.0 : 0.85
-
-                    Behavior on opacity { MotionNumber {} }
                 }
 
                 MultiEffect {
@@ -64,9 +78,6 @@ BarItem {
                     visible: Settings.bar.trayColorize
                     colorization: 1.0
                     colorizationColor: root.tint
-                    opacity: itemMouse.containsMouse ? 1.0 : 0.85
-
-                    Behavior on opacity { MotionNumber {} }
                 }
 
                 // Attention state gets the game's warning yellow rather than a badge.
@@ -79,8 +90,7 @@ BarItem {
                     color: Theme.warn
                 }
 
-                MouseArea {
-                    id: itemMouse
+                SoundArea {
                     anchors.fill: parent
                     hoverEnabled: true
                     acceptedButtons: Qt.LeftButton | Qt.RightButton

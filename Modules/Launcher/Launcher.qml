@@ -58,7 +58,17 @@ PanelWindow {
         // genuine move.
         lastCursorX = -1;
         lastCursorY = -1;
-        selectedIndex = Math.max(0, Math.min(results.length - 1, index));
+
+        const next = Math.max(0, Math.min(results.length - 1, index));
+
+        /*
+         * The arrow-key half of the navigation cue; hover is handled by each
+         * row's own SoundArea. Guarded on the index actually moving, because a
+         * held arrow key at either end of the list clamps to the same row on
+         * every repeat and would otherwise chatter there.
+         */
+        if (next !== selectedIndex) Sounds.playNavigation();
+        selectedIndex = next;
     }
 
     // Returns true only when the cursor has actually travelled.
@@ -463,7 +473,7 @@ PanelWindow {
                             Behavior on color { MotionColor {} }
                         }
 
-                        MouseArea {
+                        SoundArea {
                             id: catMouse
                             anchors.fill: parent
                             hoverEnabled: true
@@ -576,7 +586,7 @@ PanelWindow {
                         color: Theme.alpha(Theme.textMuted, 0.8)
                     }
 
-                    MouseArea {
+                    SoundArea {
                         id: rowMouse
                         anchors.fill: parent
                         hoverEnabled: true

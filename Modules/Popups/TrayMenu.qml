@@ -153,7 +153,7 @@ Item {
                         color: Theme.accent
                     }
 
-                    MouseArea {
+                    SoundArea {
                         id: entryMouse
                         anchors.fill: parent
                         hoverEnabled: true
@@ -223,7 +223,7 @@ Item {
                                     Behavior on color { MotionColor {} }
                                 }
 
-                                MouseArea {
+                                SoundArea {
                                     id: subMouse
                                     anchors.fill: parent
                                     hoverEnabled: true

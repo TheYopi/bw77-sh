@@ -95,6 +95,12 @@ Column {
               hint: "Default follows the setting on this tab" }
         ],
         "workspaces": [
+            { key: "style", label: Settings.t("Style"), type: "choice", def: "all",
+              choices: [
+                  { value: "all",     label: Settings.t("All workspaces") },
+                  { value: "current", label: Settings.t("Current only") }
+              ],
+              hint: "Current only shows a single pip and still switches on scroll" },
             { key: "labelMode", label: Settings.t("Labels"), type: "choice", def: "none",
               choices: [
                   { value: "none",    label: Settings.t("Hide") },
@@ -116,16 +122,6 @@ Column {
                   { value: "warn",     label: Settings.t("Yellow") },
                   { value: "gold",     label: Settings.t("Gold") }
               ] }
-        ,
-            root.frameField,
-            { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
-              choices: [
-                  { value: "inherit", label: Settings.t("Default") },
-                  { value: "hover",   label: Settings.t("On hover") },
-                  { value: "always",  label: Settings.t("Always") },
-                  { value: "never",   label: Settings.t("Never") }
-              ],
-              hint: "Default follows the setting on this tab" }
         ],
         /*
          * Everything about a clock, in one place.
@@ -329,6 +325,37 @@ Column {
          */
         "volume":  [ root.textField, root.frameField, root.outlineField ],
         "network": [ root.textField, root.frameField, root.outlineField ],
+        "media": [
+            { key: "showIcon", label: Settings.t("Cover art"), type: "bool", def: true },
+            { key: "showControls", label: Settings.t("Transport buttons"), type: "bool", def: true },
+            { key: "showText", label: Settings.t("Track name"), type: "bool", def: true },
+            { key: "maxChars", label: Settings.t("Maximum characters"), type: "int",
+              def: 28, min: 6, max: 90, step: 1,
+              hint: "The column is this wide whatever is playing; longer titles scroll" },
+            { key: "hideWhenIdle", label: Settings.t("Hide when nothing is playing"),
+              type: "bool", def: true }
+        ,
+            { key: "colorRole", label: Settings.t("Text colour"), type: "choice", def: "",
+              choices: [
+                  { value: "",         label: Settings.t("Default") },
+                  { value: "text",     label: Settings.t("Text") },
+                  { value: "textDim",  label: Settings.t("Dim") },
+                  { value: "accent",   label: Settings.t("Accent") },
+                  { value: "danger",   label: Settings.t("Crimson") },
+                  { value: "warn",     label: Settings.t("Yellow") },
+                  { value: "gold",     label: Settings.t("Gold") }
+              ] }
+        ,
+            root.frameField,
+            { key: "borderMode", label: Settings.t("Outline"), type: "choice", def: "inherit",
+              choices: [
+                  { value: "inherit", label: Settings.t("Default") },
+                  { value: "hover",   label: Settings.t("On hover") },
+                  { value: "always",  label: Settings.t("Always") },
+                  { value: "never",   label: Settings.t("Never") }
+              ],
+              hint: "Default follows the setting on this tab" }
+        ],
         "sysmon":  [
             { key: "showDividers", label: Settings.t("Dividers"), type: "bool", def: true },
             root.textField, root.frameField, root.outlineField

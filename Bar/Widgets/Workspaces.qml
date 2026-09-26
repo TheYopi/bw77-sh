@@ -17,7 +17,19 @@ BarItem {
         if (config && config.showNumbers === true) return "numbers";
         return "none";
     }
-    readonly property bool showLabels: labelMode !== "none"
+    /*
+     * The compact style always labels its pip.
+     *
+     * With labels off, the whole widget would be one slab in the accent colour
+     * - which tells you a workspace is focused, something that is true by
+     * definition and was never in question. The number is the entire content
+     * of that style, so "none" falls back to numbers there rather than drawing
+     * an indicator with nothing in it.
+     */
+    readonly property bool showLabels: root.singleMode || labelMode !== "none"
+
+    readonly property string effectiveLabelMode:
+        (root.singleMode && labelMode === "none") ? "numbers" : labelMode
 
     // Font size drives the pip geometry too, otherwise a larger number simply
     // overflows the slab it sits in. The size itself is the bar's now; only
@@ -57,13 +69,27 @@ BarItem {
     }
 
     function labelFor(ws) {
-        if (labelMode === "roman") return roman(ws.index);
+        if (root.effectiveLabelMode === "roman") return roman(ws.index);
         return String(ws.name);
     }
     readonly property bool scrollToSwitch: (config && config.scrollToSwitch !== undefined)
         ? config.scrollToSwitch : true
     readonly property bool activeScreenOnly: (config && config.activeScreenOnly !== undefined)
         ? config.activeScreenOnly : true
+
+    /*
+     * all     - a pip per workspace, the three-state row this widget has
+     *           always drawn
+     * current - one pip, showing only the workspace you are on
+     *
+     * The wheel works the same in both. That is the point of the compact
+     * style: the row of pips is a map, and if you navigate by scrolling rather
+     * than by clicking then the map is costing bar width to tell you something
+     * the single pip already says.
+     */
+    readonly property string style: (config && config.style)
+        ? String(config.style) : "all"
+    readonly property bool singleMode: root.style === "current"
 
     readonly property var list: {
         if (!activeScreenOnly || !screenRef) return Compositor.workspaces;
@@ -72,11 +98,60 @@ BarItem {
         return filtered.length ? filtered : Compositor.workspaces;
     }
 
+    /*
+     * The one workspace the compact style draws.
+     *
+     * `focused` is global - exactly one workspace holds the keyboard - while
+     * `active` is per output, so on a second monitor's bar only `active` has
+     * an answer. Preferring focused means the bar on the monitor you are
+     * actually using agrees with the one you are looking at; falling back to
+     * active means the other monitor's bar still shows where you left it
+     * rather than going blank.
+     *
+     * The final fallback to the first entry is for a compositor that reports
+     * neither, where an empty widget would look like a bug rather than like a
+     * missing flag.
+     */
+    readonly property var currentWs: {
+        const l = root.list;
+        if (l.length === 0) return null;
+        return l.find(w => w.focused) || l.find(w => w.active) || l[0];
+    }
+
+    readonly property var drawn: {
+        if (!root.singleMode) return root.list;
+        return root.currentWs ? [root.currentWs] : [];
+    }
+
     // Interactive so the wheel is caught, but clicks belong to the pips - each
     // one focuses its own workspace.
     interactive: true
     captureClicks: false
-    hPadding: Theme.space2
+
+    /*
+     * No padding either, now that there is no frame.
+     *
+     * Every other widget's padding sits INSIDE its outline, so the edge the
+     * eye measures the gap from is the outline itself. With the frame gone,
+     * the same padding became bare space outside the pips - so the widget
+     * ended up further from its neighbours than they are from each other,
+     * which is the gap that was left over after the border came off.
+     *
+     * The pips' own edges are the widget's edges. The bar's widgetSpacing
+     * still separates it from what is beside it, same as everything else.
+     */
+    hPadding: 0
+
+    /*
+     * No frame around the pips.
+     *
+     * Every other widget is text inside an outline; this one is already a row
+     * of outlined slabs, so the bar's frame wrapped a border around borders
+     * and added padding the neighbouring widgets do not have - the row sat in
+     * a box while the clock beside it sat on the bar. The pips are their own
+     * chrome.
+     */
+    frame: false
 
     onWheel: (delta) => {
         if (!scrollToSwitch || list.length === 0) return;
@@ -133,13 +208,21 @@ BarItem {
         }
 
         Repeater {
-            model: root.list
+            model: root.drawn
 
             Item {
                 id: pip
                 required property var modelData
 
-                readonly property bool focused: modelData.focused
+                /*
+                 * In the compact style the single pip is the current
+                 * workspace by construction, so it reads as focused even when
+                 * the flag it was chosen by was `active` - on a second
+                 * monitor's bar, a lone pip drawn in the dim "occupied" tone
+                 * would be saying it is not the one you are on, which is not
+                 * what the style is for.
+                 */
+                readonly property bool focused: root.singleMode || modelData.focused
                 readonly property bool occupied: modelData.occupied
                 readonly property string label: root.labelFor(modelData)
 
@@ -203,9 +286,10 @@ BarItem {
                         : (pip.occupied ? root.cfgColor(Theme.accent) : Theme.textMuted)
                 }
 
-                MouseArea {
+                SoundArea {
                     anchors.fill: parent
                     anchors.margins: -3
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: Compositor.focusWorkspace(pip.modelData)
                 }

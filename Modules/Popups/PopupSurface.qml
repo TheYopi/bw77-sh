@@ -90,6 +90,23 @@ PanelWindow {
              * needs measuring - the card is being scaled and faded out whole,
              * at whatever size it had.
              */
+            /*
+             * How tall the content may grow before it has to scroll.
+             *
+             * The card sizes itself to whatever its content asks for, which is
+             * right for the fixed popups - a calendar is the size a calendar
+             * is - but the notification history has no natural height: expand
+             * a group of twenty and it asks for more than the screen, gets it,
+             * and runs off the bottom edge with no way to reach the rest.
+             *
+             * Offered to the content rather than clamped here, because a card
+             * clipped from the outside would just hide the overflow. The
+             * content is the only thing that can decide what scrolls and what
+             * stays put.
+             */
+            readonly property real availableHeight: Math.max(160,
+                root.height - card.barSpace - Theme.space2 - card.padding * 2)
+
             readonly property real wantW:
                 content.item ? content.item.implicitWidth + padding * 2 : 0
             readonly property real wantH:
@@ -188,7 +205,10 @@ PanelWindow {
             Component { id: clockC;   CalendarPopup {} }
             Component { id: networkC; NetworkPopup {} }
             Component { id: sysmonC;   SysMonPopup {} }
-            Component { id: notificationsC; NotificationsPopup {} }
+            Component {
+                id: notificationsC
+                NotificationsPopup { maxHeight: card.availableHeight }
+            }
             Component { id: trayMenuC; TrayMenu {} }
             }
     }

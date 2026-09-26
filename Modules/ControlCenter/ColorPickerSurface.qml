@@ -138,7 +138,7 @@ PanelWindow {
                         strokeColor: Theme.alpha(Theme.text, 0.3)
                         notch: 5
 
-                        MouseArea {
+                        SoundArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             // Handy while comparing: one click puts it back.

@@ -108,7 +108,7 @@ Item {
                     color: Theme.danger
                 }
 
-                MouseArea {
+                SoundArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.reset()

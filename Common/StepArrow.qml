@@ -87,7 +87,7 @@ Item {
         }
     }
 
-    MouseArea {
+    SoundArea {
         id: mouse
         anchors.fill: parent
         // Generous beyond the drawn triangle. The shape is 11px across and a

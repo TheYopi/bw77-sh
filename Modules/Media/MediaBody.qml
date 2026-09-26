@@ -65,6 +65,21 @@ Item {
      * are the ones that report a length anyway - a browser tab on a live stream
      * hands over a duration in the tens of thousands of seconds - which passes
      * the test and produces a countdown of minus twenty-five hours.
+     *
+     * --- and it stays written out here, as a binding
+     *
+     * This was briefly hoisted into Services.Media as a function so the bar's
+     * [LIVE] badge could share it, and every surface that mounts this body
+     * started reporting every track as a stream. The test itself was copied
+     * across unchanged, so what broke was the evaluation rather than the
+     * logic - the only structural difference being that the player arrived as
+     * an untyped function parameter instead of being read from a typed
+     * property in the binding's own expression.
+     *
+     * It is back the way it was, and the service keeps its own binding for the
+     * active player. That is the same predicate in two places, which is a real
+     * cost and is being paid deliberately: a body that draws a scrub bar for
+     * every track it can seek is worth more than one fewer copy of nine lines.
      */
     readonly property real maxTrackSeconds: 12 * 60 * 60
 

@@ -235,7 +235,7 @@ Item {
             }
         }
 
-        MouseArea {
+        SoundArea {
             id: chevronMouse
             anchors.fill: parent
             hoverEnabled: true
@@ -244,7 +244,7 @@ Item {
         }
     }
 
-    MouseArea {
+    SoundArea {
         id: mouse
         anchors.fill: parent
         anchors.rightMargin: chevron.visible ? chevron.width : 0

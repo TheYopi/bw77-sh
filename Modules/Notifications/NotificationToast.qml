@@ -496,7 +496,7 @@ Item {
                                     color: Theme.text
                                 }
 
-                                MouseArea {
+                                SoundArea {
                                     id: actionMouse
                                     anchors.fill: parent
                                     hoverEnabled: true
@@ -543,7 +543,7 @@ Item {
      * cells, so at z: -1 a press on the body still falls through to here while
      * a press on Open or Close reaches the button.
      */
-    MouseArea {
+    SoundArea {
         z: -1
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton | Qt.RightButton
